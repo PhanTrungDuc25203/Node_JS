@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<style>
+    table {
+        font-family: arial, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    td,
+    th {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+    }
+
+    tr:nth-child(even) {
+        background-color: #dddddd;
+    }
+</style>
+
+<body>
+    <!-- file homeController đã xuất ra dữ liệu để hiển thị trong bảng bằng file html này rồi
+    ta cần thêm một vòng lặp để lặp qua từng index, sử dụng vòng lặp của ejs -->
+    <h1>Display CRUD from view</h1>
+    <table>
+        <tr>
+            <th>Email</th>
+            <th>First name</th>
+            <th>Last name</th>
+            <th>Address</th>
+            <th>Phone number</th>
+        </tr>
+        <% for(let i=0; i < dataForTable.length; i++) { %>
+            <tr>
+                <td>
+                    <%= dataForTable[i].email %>
+                </td>
+                <td>
+                    <%= dataForTable[i].firstName %>
+                </td>
+                <td>
+                    <%= dataForTable[i].lastName %>
+                </td>
+                <td>
+                    <%= dataForTable[i].address %>
+                </td>
+                <td>
+                    <%= dataForTable[i].phoneNumber %>
+                </td>
+            </tr>
+            <% } %>
+    </table>
+</body>
+
+</html>

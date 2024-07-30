@@ -41,6 +41,21 @@ let hashUserPassword = (password) => {
         }
     })
 }
+let getAllUser = () => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let users = db.User.findAll({
+                // thêm thuộc tính raw:true để chỉ lấy dữ liệu thôi không lấy nhưngx thông tin 
+                // khác về các thuộc tính của đối tượng nữa, chỉ lấy thông tin đối tượng
+                raw: true,
+            });
+            resolve(users);
+        } catch (e) {
+            reject(e);
+        }
+    })
+}
 module.exports = {
     createNewUser: createNewUser,
+    getAllUser: getAllUser,
 }
