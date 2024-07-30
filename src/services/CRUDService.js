@@ -15,6 +15,7 @@ let createNewUser = async (data) => {
                 address: data.address,
                 phoneNumber: data.phoneNumber,
                 gender: data.gender,
+                //vì chưa có chỗ nhập image và position nên tôi sẽ để là một string bất kì thôi
                 image: "DataTypes.STRING",
                 roleId: data.roleId,
                 positionId: "DataTypes.STRING",
