@@ -1,0 +1,34 @@
+{
+  "name": "node-js",
+  "version": "1.0.0",
+  "description": "back-backend node js",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon --exec ./node_modules/.bin/babel-node src/server.js"
+  },
+  "keywords": [
+    "fullstack",
+    "nodejs",
+    "express"
+  ],
+  "author": "Piscean",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.0.1",
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.19.0",
+    "dotenv": "^8.2.0",
+    "ejs": "^3.1.5",
+    "express": "^4.17.1",
+    "mysql2": "^3.10.3",
+    "sequelize": "^6.37.3"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.12.10",
+    "@babel/node": "^7.12.10",
+    "@babel/preset-env": "^7.12.10",
+    "nodemon": "^2.0.7",
+    "sequelize-cli": "^6.6.2"
+  }
+}
