@@ -49,6 +49,29 @@ let displayGetCRUD = async (req, res) => {
         dataForTable: data
     });
 }
+let getEditedCRUD = async (req, res) => {
+    //in ra màn hình console số thứ tự của trang edit tương ứng với các đối tượng user,
+    // bấm vào nút edit cho đối tượng user thứ 3 thì sẽ in ra màn hình console số "3"
+    let userId = req.query.id;
+    if (userId) {
+        let userData = await CRUDService.getUserInformationById(userId);
+        console.log('-----------------');
+        console.log(userData);
+        return res.render('editAnUserCRUD.ejs', {
+            formerUserData: userData,
+        });
+    } else {
+        return res.send('User NOT founded!')
+    }
+}
+let putCRUD = async (req, res) => {
+    // hàm lấy tất cả các dữ liệu được nhập vào
+    let data = req.body;
+    let allUsers = await CRUDService.updateUserData(data);
+    return res.render('displayCRUD.ejs', {
+        dataForTable: allUsers,
+    });
+}
 module.exports = {
     // câu lệnh export ra nhiều đối tượng hàm
     // một đối tượng hàm cần có key:value
@@ -57,4 +80,6 @@ module.exports = {
     getCRUDPage: getCRUDPage,
     postCRUD: postCRUD,
     displayGetCRUD: displayGetCRUD,
+    getEditedCRUD: getEditedCRUD,
+    putCRUD: putCRUD,
 }
