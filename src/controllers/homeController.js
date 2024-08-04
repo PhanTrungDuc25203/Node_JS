@@ -72,6 +72,18 @@ let putCRUD = async (req, res) => {
         dataForTable: allUsers,
     });
 }
+let deleteCRUD = async (req, res) => {
+    // sử dụng req.query.id khi trang web dạng ....?.... như ví dụ trang web edit: /edit-crud?id=2
+    //dấu ? là req, số 2 là query.id
+    let id = req.query.id;
+    if (id) {
+        await CRUDService.deleteUserById(id);
+        return res.send('Delete user succesfully!');
+    } else {
+        return res.send('User not founded!');
+    }
+
+}
 module.exports = {
     // câu lệnh export ra nhiều đối tượng hàm
     // một đối tượng hàm cần có key:value
@@ -82,4 +94,5 @@ module.exports = {
     displayGetCRUD: displayGetCRUD,
     getEditedCRUD: getEditedCRUD,
     putCRUD: putCRUD,
+    deleteCRUD: deleteCRUD,
 }
