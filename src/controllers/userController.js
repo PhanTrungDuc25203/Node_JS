@@ -40,7 +40,8 @@ let handleLogin = async (req, res) => {
         // yourPassword: password,
         errCode: userData.errCode,
         message: userData.errMessage,
-        userData
+        //nếu file userService trả lại biến user thì lấy biến user còn không thì lấy biến rỗng 
+        user: userData.user ? userData.user : {},
     });
 }
 
