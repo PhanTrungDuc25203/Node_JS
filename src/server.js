@@ -3,12 +3,20 @@ import express from "express";
 import bodyParser from "body-parser";
 import viewEngine from "./config/viewEngine";
 import initWebRoutes from './route/web';
+import connectDB from './config/connectDB';
+import cors from 'cors';
 
-import connectDB from './config/connectDB'
 require('dotenv').config();
 // câu lệnh trên có thể gọi tới hàm config của thư viện dotenv và giúp 
 // chạy được dòng "let port = process.env.PORT || 6969;"
 let app = express();
+// app.use(cors({ origin: true }));
+app.use(cors({
+    credentials: true,
+    origin: true,
+}));
+// app.use(cors());
+
 //config app
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }))
