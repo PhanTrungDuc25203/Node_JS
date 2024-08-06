@@ -4,6 +4,7 @@ import userController from "../controllers/userController";
 let router = express.Router();
 
 let initWebRoutes = (app) => {
+    //nơi định nghĩa các đường dẫn của trang web
     router.get('/', homeController.getHomePage);
     router.get('/about', homeController.getAboutPage);
     router.get('/crud', homeController.getCRUDPage); //thêm dữ liệu User
