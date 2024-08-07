@@ -91,7 +91,7 @@ let getAllUsersForReact = (userId) => {
             if (userId === 'ALL') {
                 users = db.User.findAll({
                     attributes: {
-                        exclude: ['password', 'positionId', 'image', 'roleId', 'phoneNumber', 'address']
+                        exclude: ['password', 'positionId', 'image', 'roleId']
                     }
                 })
             }

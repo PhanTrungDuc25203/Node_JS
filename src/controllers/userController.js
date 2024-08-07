@@ -45,7 +45,7 @@ let handleLogin = async (req, res) => {
     });
 }
 let handleGetAllUsersForReact = async (req, res) => {
-    let id = req.body.id;  //all || id
+    let id = req.query.id;  //all || id
     //nếu truyền vào id là all thì lấy tất cả người dùng còn id thì lấy 1 
     if (!id) {
         return res.status(200).json({
