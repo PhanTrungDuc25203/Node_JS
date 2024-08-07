@@ -17,6 +17,8 @@ let initWebRoutes = (app) => {
 
     //những gì ở phía React thì phân biệt bằng các thêm tiền tố /api/ vào trước các route
     router.post('/api/login', userController.handleLogin);
+    //viết link api lất tất cả người dùng ra cho react
+    router.get('/api/get-all-users-for-react', userController.handleGetAllUsersForReact);
     return app.use("/", router);
 }
 module.exports = initWebRoutes;

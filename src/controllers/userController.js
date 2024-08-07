@@ -44,7 +44,26 @@ let handleLogin = async (req, res) => {
         user: userData.user ? userData.user : {},
     });
 }
+let handleGetAllUsersForReact = async (req, res) => {
+    let id = req.body.id;  //all || id
+    //nếu truyền vào id là all thì lấy tất cả người dùng còn id thì lấy 1 
+    if (!id) {
+        return res.status(200).json({
+            errCode: 1,
+            errMessage: 'Missing required parameters!',
+            users: []
+        });
+    }
+    let users = await userService.getAllUsersForReact(id);
+
+    return res.status(200).json({
+        errCode: 0,
+        errMessage: 'Get user(s) from Database successfully',
+        users,
+    });
+}
 
 module.exports = {
     handleLogin: handleLogin,
+    handleGetAllUsersForReact: handleGetAllUsersForReact,
 }

@@ -81,6 +81,36 @@ let checkUserEmail = (userEmail) => {
         }
     })
 }
+
+let getAllUsersForReact = (userId) => {
+    //tham số truyền vào userId ở đây là id người dùng hoặc all như quy định bên userController.js
+    return new Promise(async (resolve, reject) => {
+        try {
+            let users = '';
+            //trả về ít thông tin người dùng thôi không lộ hết:))
+            if (userId === 'ALL') {
+                users = db.User.findAll({
+                    attributes: {
+                        exclude: ['password', 'positionId', 'image', 'roleId', 'phoneNumber', 'address']
+                    }
+                })
+            }
+            if (userId && userId !== 'ALL') {
+                users = await db.User.findOne({
+                    where: { id: userId }, attributes: {
+                        exclude: ['password', 'positionId', 'image', 'roleId', 'phoneNumber', 'address']
+                    }
+                })
+            }
+
+            resolve(users);
+        } catch (e) {
+            reject(e);
+        }
+    })
+}
+
 module.exports = {
     handleUserLogin: handleUserLogin,
+    getAllUsersForReact: getAllUsersForReact,
 }
