@@ -4,6 +4,19 @@ import db from "../models/index";
 //nên cần thư viện ở dưới
 import bcrypt from 'bcryptjs';
 
+const salt = bcrypt.genSaltSync(10);
+
+let hashUserPassword = (password) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let hashPassword = await bcrypt.hashSync(password, salt);
+            resolve(hashPassword);
+        } catch (e) {
+            reject(e);
+        }
+    })
+}
+
 let handleUserLogin = (email, password) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -110,7 +123,125 @@ let getAllUsersForReact = (userId) => {
     })
 }
 
+let createNewUserInReact = (data) => {
+    //data cuả hàm này đươcj gửi từ client
+    return new Promise(async (resolve, reject) => {
+        try {
+            //check sự tồn tại của email
+            let check = await checkUserEmail(data.email);
+            if (check) {
+                resolve({
+                    errCode: 1,
+                    message: 'User has already been exist!',
+                });
+            } else {
+                let hashPasswordFromBcrypt = await hashUserPassword(data.password);
+                await db.User.create({
+                    email: data.email,
+                    password: hashPasswordFromBcrypt,
+                    firstName: data.firstName,
+                    lastName: data.lastName,
+                    address: data.address,
+                    phoneNumber: data.phoneNumber,
+                    gender: data.gender,
+                    //vì chưa có chỗ nhập image và position nên tôi sẽ để là một string bất kì thôi
+                    image: "DataTypes.STRING",
+                    roleId: data.roleId,
+                    positionId: "DataTypes.STRING",
+                })
+                resolve({
+                    errCode: 0,
+                    message: 'Create user successfully!',
+                });
+            }
+        } catch (e) {
+            reject(e);
+        }
+    })
+}
+
+let editUserInReact = (data) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!data.id) {
+                resolve({
+                    errCode: 2,
+                    errMessage: 'No id input',
+                })
+            }
+            let user = await db.User.findOne({
+                where: { id: data.id },
+                //ở file config.json đã chuyển raw:true nên
+                //hàm update và delete không thể chạy, khi chạy nhớ chuyển raw: false
+                raw: false
+            })
+            if (user) {
+                user.firstName = data.firstName;
+                user.lastName = data.lastName;
+                user.address = data.address;
+                user.phoneNumber = data.phoneNumber;
+                user.gender = data.gender;
+                user.roleId = data.roleId;
+                await user.save();
+                // await db.User.save({
+                //     firstName: data.firstName,
+                //     lastName: data.lastName,
+                //     address: data.address,
+                //     phoneNumber: data.phoneNumber,
+                //     gender: data.gender,
+                //     roleId: data.roleId,
+                // })
+                resolve({
+                    errCode: 0,
+                    message: 'User updated!',
+                })
+            } else {
+                resolve({
+                    errCode: 1,
+                    errMessage: 'User is not found!'
+                });
+            }
+        } catch (e) {
+            reject(e);
+        }
+    })
+}
+
+let deleteUserInReact = (userIdFromReact) => {
+    return new Promise(async (resolve, reject) => {
+        //nếu không muốn dài dòng rườm ra thì sử dụng câu lệnh tổ hợp như sau:
+        // await db.User.destroy({
+        //     where: { id: userIdFromReact }
+        // })
+
+
+        try {
+            let user = await db.User.findOne({
+                where: { id: userIdFromReact },
+                raw: false,
+            });
+            console.log(user);
+            if (!user) {
+                resolve({
+                    errCode: 2,
+                    errMessage: 'User is not exist!'
+                })
+            }
+            await user.destroy();
+            resolve({
+                errCode: 0,
+                message: 'User has been deleted successfully'
+            })
+        } catch (e) {
+            reject(e)
+        }
+    })
+}
+
 module.exports = {
     handleUserLogin: handleUserLogin,
     getAllUsersForReact: getAllUsersForReact,
+    createNewUserInReact: createNewUserInReact,
+    deleteUserInReact: deleteUserInReact,
+    editUserInReact: editUserInReact,
 }

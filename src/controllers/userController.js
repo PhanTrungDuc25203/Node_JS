@@ -63,7 +63,33 @@ let handleGetAllUsersForReact = async (req, res) => {
     });
 }
 
+let handleCreateNewUserInReact = async (req, res) => {
+    let message = await userService.createNewUserInReact(req.body);
+    console.log(message);
+    return res.status(200).json(message);
+}
+
+let handleEditUserInReact = async (req, res) => {
+    let data = req.body;
+    let message = await userService.editUserInReact(data);
+    return res.status(200).json(message);
+}
+
+let handleDeleteUserInReact = async (req, res) => {
+    if (!req.body.id) {
+        return res.status(200).json({
+            errCode: 1,
+            message: `Mising required parameters! Maybe need deleted user's id is missing`,
+        })
+    }
+    let message = await userService.deleteUserInReact(req.body.id);
+    return res.status(200).json(message);
+}
+
 module.exports = {
     handleLogin: handleLogin,
     handleGetAllUsersForReact: handleGetAllUsersForReact,
+    handleCreateNewUserInReact: handleCreateNewUserInReact,
+    handleEditUserInReact: handleEditUserInReact,
+    handleDeleteUserInReact: handleDeleteUserInReact
 }

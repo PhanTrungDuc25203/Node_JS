@@ -19,6 +19,10 @@ let initWebRoutes = (app) => {
     router.post('/api/login', userController.handleLogin);
     //viết link api lất tất cả người dùng ra cho react
     router.get('/api/get-all-users-for-react', userController.handleGetAllUsersForReact);
+    router.post('/api/create-new-user-in-react', userController.handleCreateNewUserInReact);
+    router.put('/api/edit-user-in-react', userController.handleEditUserInReact);
+    router.delete('/api/delete-user-in-react', userController.handleDeleteUserInReact);
+
     return app.use("/", router);
 }
 module.exports = initWebRoutes;

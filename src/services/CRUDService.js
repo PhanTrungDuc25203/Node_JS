@@ -41,6 +41,7 @@ let hashUserPassword = (password) => {
         }
     })
 }
+
 let getAllUser = () => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -55,6 +56,7 @@ let getAllUser = () => {
         }
     })
 }
+
 let getUserInformationById = (userId) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -73,12 +75,16 @@ let getUserInformationById = (userId) => {
         }
     })
 }
+
 let updateUserData = (data) => {
 
     return new Promise(async (resolve, reject) => {
         try {
             let user = await db.User.findOne({
-                where: { id: data.id }
+                where: { id: data.id },
+                //ở file config.json đã chuyển raw:true nên
+                //hàm update và delete không thể chạy, khi chạy nhớ chuyển raw: false
+                raw: false
             })
             if (user) {
                 user.firstName = data.firstName;
@@ -99,11 +105,15 @@ let updateUserData = (data) => {
         }
     })
 }
+
 let deleteUserById = (needToBeDeletedUserId) => {
     return new Promise(async (resolve, reject) => {
         try {
             let user = await db.User.findOne({
-                where: { id: needToBeDeletedUserId }
+                where: { id: needToBeDeletedUserId },
+                //ở file config.json đã chuyển raw:true nên
+                //hàm update và delete không thể chạy, khi chạy nhớ chuyển raw: false
+                raw: false,
             })
             if (user) {
                 await user.destroy();
