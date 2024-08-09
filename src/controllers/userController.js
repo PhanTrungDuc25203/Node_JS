@@ -16,7 +16,7 @@ let handleLogin = async (req, res) => {
     let email = req.body.email;
     let password = req.body.password;
 
-    console.log(email);
+    // console.log(email);
 
     //check email người dùng gửi tới có tồn tại hay không
     if (!email || !password) {

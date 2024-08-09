@@ -60,11 +60,11 @@ let handleUserLogin = (email, password) => {
                         delete user.password;
                         userData.user = user;
                     } else {
-                        userData.errCode = 0;
+                        userData.errCode = 2;
                         userData.errMessage = 'Wrong pasword';
                     }
                 } else {
-                    userData.errCode = 2;
+                    userData.errCode = 1;
                     userData.errMessage = `User not found`;
                 }
             } else {
