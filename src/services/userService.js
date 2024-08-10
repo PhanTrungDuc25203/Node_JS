@@ -226,12 +226,13 @@ let deleteUserInReact = (userIdFromReact) => {
                     errCode: 2,
                     errMessage: 'User is not exist!'
                 })
+            } else {
+                await user.destroy();
+                resolve({
+                    errCode: 0,
+                    message: 'User has been deleted successfully'
+                })
             }
-            await user.destroy();
-            resolve({
-                errCode: 0,
-                message: 'User has been deleted successfully'
-            })
         } catch (e) {
             reject(e)
         }
