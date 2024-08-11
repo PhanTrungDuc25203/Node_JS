@@ -15,6 +15,23 @@ app.use(cors({
     credentials: true,
     origin: true,
 }));
+
+app.use(function (req, res, next) {
+    //chỉ cho server hoạt động ở cổng 3000 có thể gọi api từ server Node
+    res.setHeader('Access-Control-Allow-Origin', process.env.URL_REACT_SERVER);
+
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+
+    // Request headers you wish to allow
+    res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
+
+    // Set to true if you need the website to include cookies in the requests sent
+    // to the API (e.g. in case you use sessions)
+    res.setHeader('Access-Control-Allow-Credentials', true);
+    //cho phép đi qua middle ware khi server khác gọi api tới server dữ liệu node này
+    next();
+});
+
 // app.use(cors());
 
 //config app
