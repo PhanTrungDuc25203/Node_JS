@@ -23,6 +23,9 @@ let initWebRoutes = (app) => {
     router.put('/api/edit-user-in-react', userController.handleEditUserInReact);
     router.delete('/api/delete-user-in-react', userController.handleDeleteUserInReact);
 
+
+    router.get('/getallcodesdata', userController.getAllCodesData);
+
     return app.use("/", router);
 }
 module.exports = initWebRoutes;

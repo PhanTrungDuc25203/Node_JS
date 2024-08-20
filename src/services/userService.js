@@ -239,10 +239,38 @@ let deleteUserInReact = (userIdFromReact) => {
     })
 }
 
+let getAllCodesDataService = (typeInput) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!typeInput) {
+                resolve({
+                    errCode: 1,
+                    errMessage: 'Missing required parameters!'
+                });
+            } else {
+                let res = {};
+                //tên db.Allcode không liên quan tới db trong phpmyadmin, nó được định nghĩa bên trong model
+                //của project này
+                let allCodesData = await db.Allcode.findAll({
+                    where: { type: typeInput },
+                });
+                res.errCode = 0;
+                res.data = allCodesData;
+                resolve(res);
+            }
+
+
+        } catch (e) {
+            reject(e);
+        }
+    })
+}
+
 module.exports = {
     handleUserLogin: handleUserLogin,
     getAllUsersForReact: getAllUsersForReact,
     createNewUserInReact: createNewUserInReact,
     deleteUserInReact: deleteUserInReact,
     editUserInReact: editUserInReact,
+    getAllCodesDataService: getAllCodesDataService,
 }

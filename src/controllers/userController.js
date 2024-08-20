@@ -44,6 +44,7 @@ let handleLogin = async (req, res) => {
         user: userData.user ? userData.user : {},
     });
 }
+
 let handleGetAllUsersForReact = async (req, res) => {
     let id = req.query.id;  //all || id
     //nếu truyền vào id là all thì lấy tất cả người dùng còn id thì lấy 1 
@@ -86,10 +87,24 @@ let handleDeleteUserInReact = async (req, res) => {
     return res.status(200).json(message);
 }
 
+let getAllCodesData = async (req, res) => {
+    try {
+        let data = await userService.getAllCodesDataService(req.query.type);
+        return res.status(200).json(data);
+    } catch (e) {
+        console.log(`Get AllCodes's data error: `, e)
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: `Error of getting AllCodes's data from server`,
+        })
+    }
+}
+
 module.exports = {
     handleLogin: handleLogin,
     handleGetAllUsersForReact: handleGetAllUsersForReact,
     handleCreateNewUserInReact: handleCreateNewUserInReact,
     handleEditUserInReact: handleEditUserInReact,
-    handleDeleteUserInReact: handleDeleteUserInReact
+    handleDeleteUserInReact: handleDeleteUserInReact,
+    getAllCodesData: getAllCodesData
 }
