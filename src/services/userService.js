@@ -28,7 +28,7 @@ let handleUserLogin = (email, password) => {
                 //có tồn taị người dùng
                 //sau đó cần so sánh password xem có giống nhau không mới cho đăng nhập
                 let user = await db.User.findOne({
-                    attributes: ['email', 'roleId', 'password'],
+                    attributes: ['email', 'roleId', 'password', 'firstName', 'lastName'],
                     where: { email: email },
                     //chỉ lấy ra một số trường thuộc tính cần thiết của User
                     //không nên lấy hết vì lộ thông tin
