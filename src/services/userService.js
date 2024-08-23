@@ -145,9 +145,9 @@ let createNewUserInReact = (data) => {
                     phoneNumber: data.phoneNumber,
                     gender: data.gender,
                     //vì chưa có chỗ nhập image và position nên tôi sẽ để là một string bất kì thôi
-                    image: "DataTypes.STRING",
+                    image: data.image,
                     roleId: data.roleId,
-                    positionId: "DataTypes.STRING",
+                    positionId: data.positionId,
                 })
                 resolve({
                     errCode: 0,
