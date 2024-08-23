@@ -94,7 +94,7 @@ let getAllCodesData = async (req, res) => {
         setTimeout(async () => {
             let data = await userService.getAllCodesDataService(req.query.type);
             return res.status(200).json(data);
-        }, 1500)
+        }, 1000)
         //khi load lại trang thì nó đợi 1.5s nó mới gọi api
     } catch (e) {
         console.log(`Get AllCodes's data error: `, e)
