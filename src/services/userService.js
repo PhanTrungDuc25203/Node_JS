@@ -163,10 +163,14 @@ let createNewUserInReact = (data) => {
 let editUserInReact = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
-            if (!data.id) {
+            //ở dự án react có 2 crud là gọi api thuần và api thông qua redux, code ở dưới là
+            //gọi api thuần, code đang chạy là api thông qua redux, nếu muốn dùng chức năng
+            //thuần thì đổi chỗ 2 đoạn code if này
+            // if (!data.id) {
+            if (!data.id || !data.roleId || !data.positionId || !data.gender) {
                 resolve({
                     errCode: 2,
-                    errMessage: 'No id input',
+                    errMessage: 'Missing parameters!',
                 })
             }
             let user = await db.User.findOne({
@@ -182,6 +186,7 @@ let editUserInReact = (data) => {
                 user.phoneNumber = data.phoneNumber;
                 user.gender = data.gender;
                 user.roleId = data.roleId;
+                user.positionId = data.positionId;
                 await user.save();
                 // await db.User.save({
                 //     firstName: data.firstName,
