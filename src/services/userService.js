@@ -187,6 +187,11 @@ let editUserInReact = (data) => {
                 user.gender = data.gender;
                 user.roleId = data.roleId;
                 user.positionId = data.positionId;
+                if (data.image) {
+                    user.image = data.image;
+                }
+
+
                 await user.save();
                 // await db.User.save({
                 //     firstName: data.firstName,
