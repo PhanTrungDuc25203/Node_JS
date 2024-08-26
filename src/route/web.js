@@ -1,6 +1,8 @@
 import express from "express";
 import homeController from "../controllers/homeController";
 import userController from "../controllers/userController";
+import doctorController from "../controllers/doctorController";
+
 let router = express.Router();
 
 let initWebRoutes = (app) => {
@@ -25,6 +27,8 @@ let initWebRoutes = (app) => {
 
 
     router.get('/api/getallcodesdata', userController.getAllCodesData);
+    //lấy bác sĩ nổi bật cho trang home
+    router.get('/api/get-elite-doctor-for-homepage', doctorController.getEliteDoctorForHomePage);
 
     return app.use("/", router);
 }
