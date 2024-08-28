@@ -50,7 +50,37 @@ let getAllDoctorsForDoctorArticlePage = () => {
     })
 }
 
+let saveInforAndArticleOfADoctorService = (inputData) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!inputData.doctorId || !inputData.htmlContent || !inputData.markdownContent) {
+                resolve({
+                    errCode: 1,
+                    errMesage: 'Missing parameters!',
+                })
+            } else {
+                await db.ArticleMarkdown.create({
+                    htmlContent: inputData.htmlContent,
+                    markdownContent: inputData.markdownContent,
+                    description: inputData.description,
+                    doctorId: inputData.doctorId,
+                    // specialtyId
+                    // clinicId
+                })
+
+                resolve({
+                    errCode: 0,
+                    errMessage: 'Save article for doctor successfully!',
+                })
+            }
+        } catch (e) {
+            reject(e);
+        }
+    })
+}
+
 module.exports = {
     getEliteDoctorForHomePage: getEliteDoctorForHomePage,
     getAllDoctorsForDoctorArticlePage: getAllDoctorsForDoctorArticlePage,
+    saveInforAndArticleOfADoctorService: saveInforAndArticleOfADoctorService,
 }

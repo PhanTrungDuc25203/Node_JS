@@ -31,6 +31,8 @@ let initWebRoutes = (app) => {
     router.get('/api/get-elite-doctor-for-homepage', doctorController.getEliteDoctorForHomePage);
     //lấy ra tất cả bác sĩ để cho vào Select trong trang doctorArticle
     router.get('/api/get-all-doctors-for-doctor-article-page', doctorController.getAllDoctorsForDoctorArticlePage);
+    //lưu bài báo của một bacs sĩ
+    router.post('/api/save-infor-and-article-of-a-doctor', doctorController.saveInforAndArticleOfADoctor);
 
     return app.use("/", router);
 }

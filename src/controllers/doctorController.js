@@ -23,6 +23,7 @@ let getAllDoctorsForDoctorArticlePage = async (req, res) => {
         let doctors = await doctorService.getAllDoctorsForDoctorArticlePage();
         return res.status(200).json(doctors);
     } catch (e) {
+        console.log(e);
         return res.status(200).json({
             errCode: -1,
             errMessage: 'Get doctors for doctorArticle page error!'
@@ -30,7 +31,21 @@ let getAllDoctorsForDoctorArticlePage = async (req, res) => {
     }
 }
 
+let saveInforAndArticleOfADoctor = async (req, res) => {
+    try {
+        let response = await doctorService.saveInforAndArticleOfADoctorService(req.body);
+        return res.status(200).json(response);
+    } catch (e) {
+        console.log(e);
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: `Save doctor's infor and article error!`
+        })
+    }
+}
+
 module.exports = {
     getEliteDoctorForHomePage: getEliteDoctorForHomePage,
     getAllDoctorsForDoctorArticlePage: getAllDoctorsForDoctorArticlePage,
+    saveInforAndArticleOfADoctor: saveInforAndArticleOfADoctor,
 }
