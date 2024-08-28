@@ -29,6 +29,8 @@ let initWebRoutes = (app) => {
     router.get('/api/getallcodesdata', userController.getAllCodesData);
     //lấy bác sĩ nổi bật cho trang home
     router.get('/api/get-elite-doctor-for-homepage', doctorController.getEliteDoctorForHomePage);
+    //lấy ra tất cả bác sĩ để cho vào Select trong trang doctorArticle
+    router.get('/api/get-all-doctors-for-doctor-article-page', doctorController.getAllDoctorsForDoctorArticlePage);
 
     return app.use("/", router);
 }

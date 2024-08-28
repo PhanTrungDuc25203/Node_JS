@@ -18,6 +18,19 @@ let getEliteDoctorForHomePage = async (req, res) => {
     }
 }
 
+let getAllDoctorsForDoctorArticlePage = async (req, res) => {
+    try {
+        let doctors = await doctorService.getAllDoctorsForDoctorArticlePage();
+        return res.status(200).json(doctors);
+    } catch (e) {
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: 'Get doctors for doctorArticle page error!'
+        })
+    }
+}
+
 module.exports = {
     getEliteDoctorForHomePage: getEliteDoctorForHomePage,
+    getAllDoctorsForDoctorArticlePage: getAllDoctorsForDoctorArticlePage,
 }
