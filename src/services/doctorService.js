@@ -93,16 +93,22 @@ let getParticularInforForDoctorPage = (inputDoctorId) => {
                         id: inputDoctorId
                     },
                     attributes: {
-                        exclude: ['password', 'image'],
+                        exclude: ['password'],
                     },
                     include: [
                         { model: db.ArticleMarkdown, attributes: ['htmlContent', 'markdownContent', 'description'] },
                         { model: db.Allcode, as: 'positionData', attributes: ['value_Eng', 'value_Vie'] },
 
                     ],
-                    raw: true,
+                    raw: false,
                     nest: true,
                 })
+
+                if (data && data.image) {
+                    data.image = Buffer.from(data.image, 'base64').toString('binary');
+                }
+
+                if (!data) data = {};
 
                 resolve({
                     errCode: 0,
