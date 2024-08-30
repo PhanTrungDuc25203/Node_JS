@@ -53,20 +53,34 @@ let getAllDoctorsForDoctorArticlePage = () => {
 let saveInforAndArticleOfADoctorService = (inputData) => {
     return new Promise(async (resolve, reject) => {
         try {
-            if (!inputData.doctorId || !inputData.htmlContent || !inputData.markdownContent) {
+            if (!inputData.doctorId || !inputData.htmlContent || !inputData.markdownContent || !inputData.action) {
                 resolve({
                     errCode: 1,
                     errMesage: 'Missing parameters!',
                 })
             } else {
-                await db.ArticleMarkdown.create({
-                    htmlContent: inputData.htmlContent,
-                    markdownContent: inputData.markdownContent,
-                    description: inputData.description,
-                    doctorId: inputData.doctorId,
-                    // specialtyId
-                    // clinicId
-                })
+                if (inputData.action === 'CREATE') {
+                    await db.ArticleMarkdown.create({
+                        htmlContent: inputData.htmlContent,
+                        markdownContent: inputData.markdownContent,
+                        description: inputData.description,
+                        doctorId: inputData.doctorId,
+                        // specialtyId
+                        // clinicId
+                    })
+                } else if (inputData.action === 'EDIT') {
+                    let needEdittingDoctorArticle = await db.ArticleMarkdown.findOne({
+                        where: { doctorId: inputData.doctorId },
+                        raw: false,
+                    })
+                    if (needEdittingDoctorArticle) {
+                        needEdittingDoctorArticle.htmlContent = inputData.htmlContent;
+                        needEdittingDoctorArticle.markdownContent = inputData.markdownContent;
+                        needEdittingDoctorArticle.description = inputData.description;
+                        await needEdittingDoctorArticle.save();
+                    }
+                }
+
 
                 resolve({
                     errCode: 0,
