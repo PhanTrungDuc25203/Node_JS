@@ -35,7 +35,8 @@ let initWebRoutes = (app) => {
     router.post('/api/save-infor-and-article-of-a-doctor', doctorController.saveInforAndArticleOfADoctor);
     //lấy thông tin map từ 2 bảng user và markdown với key=doctorId để hiển thị thông tin bác sĩ
     router.get('/api/get-a-particular-doctor-infor-for-his-or-her-page', doctorController.getParticularInforForDoctorPage);
-
+    //tạo một schedule cho 1 bac sĩ, một schedule có nhiều timeframe
+    router.post('/api/bulk-create-timeframes-for-doctor-appointment-schedule', doctorController.createTimeframesForDoctorSchedule);
 
 
     return app.use("/", router);

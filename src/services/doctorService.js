@@ -1,6 +1,10 @@
 import { resolveInclude } from "ejs";
 import db from "../models/index";
 import bcrypt from 'bcryptjs';
+require('dotenv').config();
+import _ from 'lodash';
+
+const MAX_NUMBER_CAN_RENDEZVOUS_DOCTOR = process.env.MAX_NUMBER_CAN_RENDEZVOUS_DOCTOR;
 
 let getEliteDoctorForHomePage = (limitEliteDoctor) => {
     return new Promise(async (resolve, reject) => {
@@ -135,9 +139,66 @@ let getParticularInforForDoctorPage = (inputDoctorId) => {
     })
 }
 
+let bulkCreateTimeframesForDoctorService = (inputData) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!inputData.scheduleArr || !inputData.doctorId || !inputData.formatedDate) {
+                resolve({
+                    errCode: 1,
+                    errMessage: 'Missing required parameters: timeframe data!',
+                })
+            } else {
+                let availableTimeframe = inputData.scheduleArr;
+                if (availableTimeframe && availableTimeframe.length > 0) {
+                    availableTimeframe.map(item => {
+                        item.maxNumber = MAX_NUMBER_CAN_RENDEZVOUS_DOCTOR;
+                        return item;
+                    })
+                }
+
+                //kiểm tra timeframe của một bác sĩ đã tồn tại
+                let existing = await db.Schedule.findAll({
+                    where: { doctorId: inputData.doctorId, date: inputData.formatedDate },
+                    attributes: ['timeType', 'date', 'doctorId', 'maxNumber'],
+                    raw: true,
+                })
+
+                if (existing && existing.length > 0) {
+                    existing = existing.map(item => {
+                        item.date = new Date(item.date).getTime();
+                        return item;
+                    })
+                }
+
+                //compare to find differences
+                let needAdding = _.differenceWith(availableTimeframe, existing, (a, b) => {
+                    return a.timeType === b.timeType && a.date === b.date;
+                })
+
+                //create
+                if (needAdding && needAdding.length > 0) {
+                    await db.Schedule.bulkCreate(needAdding);
+                }
+
+                // console.log('Timeframe for doctor: ', availableTimeframe);
+                // await db.Schedule.bulkCreate(availableTimeframe);
+                resolve({
+                    errCode: 0,
+                    errMessage: 'Create available time for doctor appointment successfully!',
+                });
+            }
+
+        } catch (e) {
+            reject(e);
+        }
+    })
+}
+
+
 module.exports = {
     getEliteDoctorForHomePage: getEliteDoctorForHomePage,
     getAllDoctorsForDoctorArticlePage: getAllDoctorsForDoctorArticlePage,
     saveInforAndArticleOfADoctorService: saveInforAndArticleOfADoctorService,
     getParticularInforForDoctorPage: getParticularInforForDoctorPage,
+    bulkCreateTimeframesForDoctorService: bulkCreateTimeframesForDoctorService,
 }
