@@ -14,6 +14,8 @@ module.exports = (sequelize, DataTypes) => {
             //nơi định nghĩa các mối quan hệ, 1-n,1-1,n-1,n-n?...
             Allcode.hasMany(models.User, { foreignKey: 'positionId', as: 'positionData' })
             Allcode.hasMany(models.User, { foreignKey: 'gender', as: 'genderData' })
+            Allcode.hasMany(models.Schedule, { foreignKey: 'timeType', as: 'timeTypeData' })
+
         }
     }
     Allcode.init({

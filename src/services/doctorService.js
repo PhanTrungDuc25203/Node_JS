@@ -209,7 +209,12 @@ let getScheduleByDateService = (doctorId, date) => {
                     where: {
                         doctorId: doctorId,
                         date: formattedDate,
-                    }
+                    },
+                    include: [
+                        { model: db.Allcode, as: 'timeTypeData', attributes: ['value_Eng', 'value_Vie'] },
+                    ],
+                    raw: false,
+                    nest: true,
                 })
 
                 if (!scheduleData) {
