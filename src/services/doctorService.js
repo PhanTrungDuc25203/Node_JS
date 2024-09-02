@@ -205,7 +205,6 @@ let getScheduleByDateService = (doctorId, date) => {
                 })
             } else {
                 let formattedDate = moment(Number(date)).format('YYYY-MM-DD 00:00:00');
-                // console.log("Date input: ", date, "date formatted: ", formattedDate);
                 let scheduleData = await db.Schedule.findAll({
                     where: {
                         doctorId: doctorId,
