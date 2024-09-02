@@ -3,6 +3,7 @@ import db from "../models/index";
 import bcrypt from 'bcryptjs';
 require('dotenv').config();
 import _ from 'lodash';
+import moment from "moment";
 
 const MAX_NUMBER_CAN_RENDEZVOUS_DOCTOR = process.env.MAX_NUMBER_CAN_RENDEZVOUS_DOCTOR;
 
@@ -194,6 +195,39 @@ let bulkCreateTimeframesForDoctorService = (inputData) => {
     })
 }
 
+let getScheduleByDateService = (doctorId, date) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!doctorId || !date) {
+                resolve({
+                    errCode: 1,
+                    errMessage: 'Missing required parameter: doctorId or date',
+                })
+            } else {
+                let formattedDate = moment(Number(date)).format('YYYY-MM-DD 00:00:00');
+                // console.log("Date input: ", date, "date formatted: ", formattedDate);
+                let scheduleData = await db.Schedule.findAll({
+                    where: {
+                        doctorId: doctorId,
+                        date: formattedDate,
+                    }
+                })
+
+                if (!scheduleData) {
+                    scheduleData = [];
+                }
+
+                resolve({
+                    errCode: 0,
+                    data: scheduleData,
+                })
+            }
+        } catch (e) {
+
+        }
+    })
+}
+
 
 module.exports = {
     getEliteDoctorForHomePage: getEliteDoctorForHomePage,
@@ -201,4 +235,5 @@ module.exports = {
     saveInforAndArticleOfADoctorService: saveInforAndArticleOfADoctorService,
     getParticularInforForDoctorPage: getParticularInforForDoctorPage,
     bulkCreateTimeframesForDoctorService: bulkCreateTimeframesForDoctorService,
+    getScheduleByDateService: getScheduleByDateService,
 }
