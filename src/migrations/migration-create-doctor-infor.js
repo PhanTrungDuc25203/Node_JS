@@ -3,7 +3,7 @@
 module.exports = {
     async up(queryInterface, Sequelize) {
         // tên bảng viết hoa hay thường thì mysql tự chuyển thành thường
-        await queryInterface.createTable('Doctor_infor', {
+        await queryInterface.createTable('Doctor_infors', {
             id: {
                 allowNull: false,
                 autoIncrement: true,
