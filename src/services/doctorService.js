@@ -149,6 +149,18 @@ let getParticularInforForDoctorPage = (inputDoctorId) => {
                         { model: db.ArticleMarkdown, attributes: ['htmlContent', 'markdownContent', 'description'] },
                         { model: db.Allcode, as: 'positionData', attributes: ['value_Eng', 'value_Vie'] },
 
+                        {
+                            model: db.Doctor_infor,
+                            attributes: {
+                                exclude: ['id', 'doctorId']
+                            },
+                            include: [
+                                { model: db.Allcode, as: 'priceTypeData', attributes: ['value_Eng', 'value_Vie'] },
+                                { model: db.Allcode, as: 'provinceTypeData', attributes: ['value_Eng', 'value_Vie'] },
+                                { model: db.Allcode, as: 'paymentTypeData', attributes: ['value_Eng', 'value_Vie'] },
+                            ]
+                        },
+
                     ],
                     raw: false,
                     nest: true,
