@@ -39,6 +39,8 @@ let initWebRoutes = (app) => {
     router.post('/api/bulk-create-timeframes-for-doctor-appointment-schedule', doctorController.createTimeframesForDoctorSchedule);
     //lấy khung giờ khám cho từng ngày của một bác sĩ
     router.get('/api/get-doctor-schedule-by-date', doctorController.getScheduleByDate);
+    //lấy thêm thông tin bác sĩ như địa chỉ phòng khám, giá khám, phương thức thanh toán
+    router.get('/api/get-extra-infor-doctor-by-id', doctorController.getExtraInforDoctorByID);
 
     return app.use("/", router);
 }

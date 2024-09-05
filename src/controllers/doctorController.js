@@ -83,6 +83,19 @@ let getScheduleByDate = async (req, res) => {
     }
 }
 
+let getExtraInforDoctorByID = async (req, res) => {
+    try {
+        let infor = await doctorService.getExtraInforDoctorByIDService(req.query.doctorId);
+        return res.status(200).json(infor);
+    } catch (e) {
+        console.log(e);
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: 'Get extra infor doctor error from server!',
+        })
+    }
+}
+
 module.exports = {
     getEliteDoctorForHomePage: getEliteDoctorForHomePage,
     getAllDoctorsForDoctorArticlePage: getAllDoctorsForDoctorArticlePage,
@@ -90,4 +103,5 @@ module.exports = {
     getParticularInforForDoctorPage: getParticularInforForDoctorPage,
     createTimeframesForDoctorSchedule: createTimeframesForDoctorSchedule,
     getScheduleByDate: getScheduleByDate,
+    getExtraInforDoctorByID: getExtraInforDoctorByID,
 }
