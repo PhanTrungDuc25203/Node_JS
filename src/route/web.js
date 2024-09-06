@@ -2,6 +2,7 @@ import express from "express";
 import homeController from "../controllers/homeController";
 import userController from "../controllers/userController";
 import doctorController from "../controllers/doctorController";
+import patientController from "../controllers/patientController";
 
 let router = express.Router();
 
@@ -41,6 +42,9 @@ let initWebRoutes = (app) => {
     router.get('/api/get-doctor-schedule-by-date', doctorController.getScheduleByDate);
     //lấy thêm thông tin bác sĩ như địa chỉ phòng khám, giá khám, phương thức thanh toán
     router.get('/api/get-extra-infor-doctor-by-id', doctorController.getExtraInforDoctorByID);
+
+    //lưu bệnh nhân và thông tin đặt lịch khám với bác sĩ
+    router.post('/api/patient-infor-when-booking-time', patientController.patientInforWhenBookingTime);
 
     return app.use("/", router);
 }
