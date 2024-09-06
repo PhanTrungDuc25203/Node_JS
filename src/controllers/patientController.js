@@ -2,7 +2,7 @@ import patientService from "../services/patientService";
 
 let patientInforWhenBookingTime = async (req, res) => {
     try {
-        let infor = await patientService.patientInforWhenBookingTimeService(req.query);
+        let infor = await patientService.patientInforWhenBookingTimeService(req.body);
         return res.status(200).json(infor);
     } catch (e) {
         console.log(e);

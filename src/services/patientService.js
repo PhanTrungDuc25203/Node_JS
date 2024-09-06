@@ -31,7 +31,7 @@ let patientInforWhenBookingTimeService = (data) => {
                         defaults: {
                             statusId: 'S1', //hardcode
                             doctorId: data.doctorId,
-                            patientId: patient[0],
+                            patientId: patient[0].id,
                             date: data.date,
                             timeType: data.timeType,
                         }
