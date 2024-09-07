@@ -10,7 +10,9 @@ import sendEmailService from "./sendEmailService";
 let patientInforWhenBookingTimeService = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
-            if (!data.email || !data.doctorId || !data.timeType || !data.date) {
+            if (!data.email || !data.doctorId || !data.timeType || !data.date ||
+                !data.fullname || !data.appointmentMoment || !data.phoneNumber
+            ) {
                 resolve({
                     errCode: 1,
                     errMessage: `Missing parameter: patient's email`,
@@ -19,9 +21,9 @@ let patientInforWhenBookingTimeService = (data) => {
 
                 await sendEmailService.sendAEmail({
                     receiverEmail: data.email,
-                    patientName: 'Đào Duy Anh',
-                    time: '8:00-10:00 ngày 10-09-2024',
-                    doctorName: 'Phan Piscean',
+                    patientName: data.fullname,
+                    time: data.appointmentMoment,
+                    doctorName: 'Quý',
                     clinicName: 'Phòng khám sản phụ khoa',
                     redirectLink: 'https://www.youtube.com/@pisceanduc2200',
                 });
@@ -31,6 +33,10 @@ let patientInforWhenBookingTimeService = (data) => {
                     where: { email: data.email },
                     defaults: {
                         email: data.email,
+                        lastName: data.fullname,
+                        phoneNumber: data.phoneNumber,
+                        address: data.address,
+                        gender: data.selectedGender,
                         roleId: 'R3',
                     }
                 });
@@ -45,6 +51,10 @@ let patientInforWhenBookingTimeService = (data) => {
                             patientId: patient[0].id,
                             date: data.date,
                             timeType: data.timeType,
+                            patientPhoneNumber: data.phoneNumber,
+                            patientBirthday: data.birthday,
+                            patientAddress: data.address,
+                            patientGender: data.selectedGender,
                         }
                     })
                 }

@@ -25,6 +25,21 @@ module.exports = {
             timeType: {
                 type: Sequelize.STRING
             },
+            //
+            patientPhoneNumber: {
+                type: Sequelize.STRING
+            },
+            patientBirthday: {
+                type: Sequelize.DATE
+            },
+            patientAddress: {
+                type: Sequelize.STRING
+            },
+            patientGender: {
+                type: Sequelize.STRING
+            },
+
+
             createdAt: {
                 allowNull: false,
                 type: Sequelize.DATE
