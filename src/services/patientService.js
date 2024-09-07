@@ -18,13 +18,27 @@ let patientInforWhenBookingTimeService = (data) => {
                     errMessage: `Missing parameter: patient's email`,
                 })
             } else {
+                let doctorInfor = await db.User.findOne({
+                    where: { id: data.doctorId },
+                    attributes: {
+                        exclude: ['id', 'email', 'password', 'address', 'phoneNumber', 'roleId', 'positionId']
+                    },
+                    include: [
+                        {
+                            model: db.Doctor_infor,
+                            attributes: ['clinicName', 'clinicAddress']
+                        },
+                    ],
+                    raw: false,
+                })
 
                 await sendEmailService.sendAEmail({
                     receiverEmail: data.email,
                     patientName: data.fullname,
                     time: data.appointmentMoment,
-                    doctorName: 'Quý',
-                    clinicName: 'Phòng khám sản phụ khoa',
+                    doctorName: doctorInfor.lastName + ' ' + doctorInfor.firstName,
+                    clinicName: doctorInfor.Doctor_infor.clinicName,
+                    clinicAddress: doctorInfor.Doctor_infor.clinicAddress,
                     redirectLink: 'https://www.youtube.com/@pisceanduc2200',
                 });
 
