@@ -122,7 +122,7 @@ let confirmBookingAppointmentService = (data) => {
                     })
                 } else {
                     resolve({
-                        errCode: 1,
+                        errCode: 2,
                         errMessage: 'Appointment has been actived or does not exist!',
                     })
                 }
