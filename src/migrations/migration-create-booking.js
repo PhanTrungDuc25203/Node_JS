@@ -38,6 +38,9 @@ module.exports = {
             patientGender: {
                 type: Sequelize.STRING
             },
+            token: {
+                type: Sequelize.STRING
+            },
 
 
             createdAt: {

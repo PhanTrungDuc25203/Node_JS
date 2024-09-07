@@ -39,6 +39,7 @@ let patientInforWhenBookingTimeService = (data) => {
                     doctorName: doctorInfor.lastName + ' ' + doctorInfor.firstName,
                     clinicName: doctorInfor.Doctor_infor.clinicName,
                     clinicAddress: doctorInfor.Doctor_infor.clinicAddress,
+                    language: data.language,
                     redirectLink: 'https://www.youtube.com/@pisceanduc2200',
                 });
 
