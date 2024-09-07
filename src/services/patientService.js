@@ -6,6 +6,12 @@ import _ from 'lodash';
 import moment from "moment";
 import { where } from "sequelize";
 import sendEmailService from "./sendEmailService";
+import { v4 as uuidv4 } from 'uuid';
+
+let buildUrlConfirmMedicalRecord = (doctorId, token) => {
+    let result = `${process.env.URL_REACT_SERVER}/confirm-booking?token=${token}&doctorId=${doctorId}`;
+    return result;
+}
 
 let patientInforWhenBookingTimeService = (data) => {
     return new Promise(async (resolve, reject) => {
@@ -15,7 +21,7 @@ let patientInforWhenBookingTimeService = (data) => {
             ) {
                 resolve({
                     errCode: 1,
-                    errMessage: `Missing parameter: patient's email`,
+                    errMessage: `Missing parameter(s)!`,
                 })
             } else {
                 let doctorInfor = await db.User.findOne({
@@ -32,6 +38,8 @@ let patientInforWhenBookingTimeService = (data) => {
                     raw: false,
                 })
 
+                let token = uuidv4(); // ⇨ '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d'
+
                 await sendEmailService.sendAEmail({
                     receiverEmail: data.email,
                     patientName: data.fullname,
@@ -40,7 +48,7 @@ let patientInforWhenBookingTimeService = (data) => {
                     clinicName: doctorInfor.Doctor_infor.clinicName,
                     clinicAddress: doctorInfor.Doctor_infor.clinicAddress,
                     language: data.language,
-                    redirectLink: 'https://www.youtube.com/@pisceanduc2200',
+                    redirectLink: buildUrlConfirmMedicalRecord(data.doctorId, token),
                 });
 
                 //upsert data
@@ -70,6 +78,7 @@ let patientInforWhenBookingTimeService = (data) => {
                             patientBirthday: data.birthday,
                             patientAddress: data.address,
                             patientGender: data.selectedGender,
+                            token: token,
                         }
                     })
                 }
@@ -86,6 +95,45 @@ let patientInforWhenBookingTimeService = (data) => {
     })
 }
 
+let confirmBookingAppointmentService = (data) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!data.token || !data.doctorId) {
+                resolve({
+                    errCode: 1,
+                    errMessage: `Missing parameter(s): token or doctorId!`,
+                })
+            } else {
+                let appointment = await db.Booking.findOne({
+                    where: {
+                        doctorId: data.doctorId,
+                        token: data.token,
+                        statusId: 'S1',
+                    },
+                    raw: false,
+                })
+
+                if (appointment) {
+                    appointment.statusId = 'S2';
+                    await appointment.save();
+                    resolve({
+                        errCode: 0,
+                        errMessage: 'The patient has confirmed!',
+                    })
+                } else {
+                    resolve({
+                        errCode: 1,
+                        errMessage: 'Appointment has been actived or does not exist!',
+                    })
+                }
+            }
+        } catch (e) {
+            reject(e);
+        }
+    })
+}
+
 module.exports = {
     patientInforWhenBookingTimeService: patientInforWhenBookingTimeService,
+    confirmBookingAppointmentService: confirmBookingAppointmentService,
 }

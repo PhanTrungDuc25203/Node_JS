@@ -45,6 +45,8 @@ let initWebRoutes = (app) => {
 
     //lưu bệnh nhân và thông tin đặt lịch khám với bác sĩ
     router.post('/api/patient-infor-when-booking-time', patientController.patientInforWhenBookingTime);
+    //trang web xác nhận chốt đặt lịch
+    router.post('/api/confirm-booking-appointment', patientController.confirmBookingAppointment);
 
     return app.use("/", router);
 }
