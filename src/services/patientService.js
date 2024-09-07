@@ -5,6 +5,7 @@ require('dotenv').config();
 import _ from 'lodash';
 import moment from "moment";
 import { where } from "sequelize";
+import sendEmailService from "./sendEmailService";
 
 let patientInforWhenBookingTimeService = (data) => {
     return new Promise(async (resolve, reject) => {
@@ -15,6 +16,16 @@ let patientInforWhenBookingTimeService = (data) => {
                     errMessage: `Missing parameter: patient's email`,
                 })
             } else {
+
+                await sendEmailService.sendAEmail({
+                    receiverEmail: data.email,
+                    patientName: 'Đào Duy Anh',
+                    time: '8:00-10:00 ngày 10-09-2024',
+                    doctorName: 'Phan Piscean',
+                    clinicName: 'Phòng khám sản phụ khoa',
+                    redirectLink: 'https://www.youtube.com/@pisceanduc2200',
+                });
+
                 //upsert data
                 let patient = await db.User.findOrCreate({
                     where: { email: data.email },
