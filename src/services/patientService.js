@@ -67,7 +67,7 @@ let patientInforWhenBookingTimeService = (data) => {
                 //create a booking records
                 if (patient && patient[0]) {
                     await db.Booking.findOrCreate({
-                        where: { patientId: patient[0].id },
+                        where: { patientId: patient[0].id, doctorId: data.doctorId },
                         defaults: {
                             statusId: 'S1', //hardcode
                             doctorId: data.doctorId,
