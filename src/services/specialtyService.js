@@ -27,6 +27,34 @@ let createSpecialtyService = (data) => {
     })
 }
 
+let getSpecialtyForHomePageService = () => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let specialties = await db.Specialty.findAll({
+                // where: {
+                //     roleId: 'R2',
+                // },
+                order: [['createdAt', 'ASC']],
+                // attributes: {
+                //     exclude: ['password'],
+                // },
+                // include: [
+                //     { model: db.Allcode, as: 'positionData', attributes: ['value_Eng', 'value_Vie'] },
+                //     { model: db.Allcode, as: 'genderData', attributes: ['value_Eng', 'value_Vie'] },
+                // ],
+                raw: true,
+            })
+            resolve({
+                errCode: 0,
+                data: specialties,
+            })
+        } catch (e) {
+            reject(e);
+        }
+    })
+}
+
 module.exports = {
     createSpecialtyService: createSpecialtyService,
+    getSpecialtyForHomePageService: getSpecialtyForHomePageService,
 }
