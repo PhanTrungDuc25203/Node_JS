@@ -54,7 +54,58 @@ let getSpecialtyForHomePageService = () => {
     })
 }
 
+let getSpecialtyByIdService = (inputId, location) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!inputId || !location) {
+                resolve({
+                    errCode: 1,
+                    errMessage: 'Missing parameter(s): inputId or Location',
+                })
+            } else {
+                let data = await db.Specialty.findOne({
+                    where: { id: inputId },
+                    attributes: ['name', 'htmlDescription', 'markdownDescription', 'specialtyImage'],
+                })
+
+                if (data && data.specialtyImage) {
+                    data.specialtyImage = Buffer.from(data.specialtyImage, 'base64').toString('binary');
+                }
+
+                if (data) {
+                    let doctorInSpecialty = [];
+                    if (location === 'ALL') {
+                        doctorInSpecialty = await db.Doctor_infor.findAll({
+                            where: { specialtyId: inputId },
+                            attributes: ['doctorId', 'provinceId'],
+                        })
+                    } else {
+                        //find by location
+                        doctorInSpecialty = await db.Doctor_infor.findAll({
+                            where: { specialtyId: inputId, provinceId: location },
+                            attributes: ['doctorId', 'provinceId'],
+                        })
+                    }
+                    data = data.toJSON();
+                    data.doctorInSpecialty = doctorInSpecialty;
+                } else {
+                    data = {};
+                }
+
+                resolve({
+                    errCode: 0,
+                    errMessage: 'Get data successfully!',
+                    data
+                })
+            }
+        } catch (e) {
+
+        }
+    })
+}
+
 module.exports = {
     createSpecialtyService: createSpecialtyService,
     getSpecialtyForHomePageService: getSpecialtyForHomePageService,
+    getSpecialtyByIdService: getSpecialtyByIdService,
 }

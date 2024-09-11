@@ -53,6 +53,9 @@ let initWebRoutes = (app) => {
     //lấy các specialties cho trang home
     router.get('/api/get-specialty-for-homepage', specialtyController.getSpecialtyForHomePage);
 
+    //lấy dữ liệu cho trang specialty details, bao gồm thông tin của specialty và bác sĩ
+    router.get('/api/get-specialty-by-id', specialtyController.getSpecialtyById);
+
     return app.use("/", router);
 }
 module.exports = initWebRoutes;

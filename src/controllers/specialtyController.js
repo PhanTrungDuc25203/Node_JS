@@ -26,7 +26,21 @@ let getSpecialtyForHomePage = async (req, res) => {
     }
 }
 
+let getSpecialtyById = async (req, res) => {
+    try {
+        let infor = await specialtyService.getSpecialtyByIdService(req.query.id, req.query.location);
+        return res.status(200).json(infor);
+    } catch (e) {
+        console.log(e);
+        return escapeRegExp.status(200).json({
+            errCode: -1,
+            errMessage: 'Get specialty detail by id error from server!',
+        })
+    }
+}
+
 module.exports = {
     createSpecialty: createSpecialty,
     getSpecialtyForHomePage: getSpecialtyForHomePage,
+    getSpecialtyById: getSpecialtyById,
 }
