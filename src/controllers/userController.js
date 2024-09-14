@@ -105,11 +105,27 @@ let getAllCodesData = async (req, res) => {
     }
 }
 
+let getAllRelativeInforsOfCurrentSystemUser = async (req, res) => {
+    try {
+        setTimeout(async () => {
+            let data = await userService.getAllRelativeInforsOfCurrentSystemUserService(req.query.email);
+            return res.status(200).json(data);
+        }, 500)
+    } catch (e) {
+        console.log(`Get all relative infors of current system's user: `, e)
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: `Get all relative infors of current system's user error from server!`,
+        })
+    }
+}
+
 module.exports = {
     handleLogin: handleLogin,
     handleGetAllUsersForReact: handleGetAllUsersForReact,
     handleCreateNewUserInReact: handleCreateNewUserInReact,
     handleEditUserInReact: handleEditUserInReact,
     handleDeleteUserInReact: handleDeleteUserInReact,
-    getAllCodesData: getAllCodesData
+    getAllCodesData: getAllCodesData,
+    getAllRelativeInforsOfCurrentSystemUser: getAllRelativeInforsOfCurrentSystemUser,
 }

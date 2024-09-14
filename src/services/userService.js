@@ -276,6 +276,67 @@ let getAllCodesDataService = (typeInput) => {
     })
 }
 
+let getAllRelativeInforsOfCurrentSystemUserService = (currentUserEmail) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!currentUserEmail) {
+                resolve({
+                    errCode: 1,
+                    errMessage: 'Missing input parameter: current user email!',
+                })
+            } else {
+                let userInUserTable = await db.User.findOne({
+                    where: { email: currentUserEmail },
+                    attributes: {
+                        exclude: ['password', 'image']
+                    },
+                    include: [
+                        {
+                            model: db.Doctor_infor,
+                            attributes: {
+                                exclude: ['id', 'doctorId']
+                            }
+                        },
+                        {
+                            model: db.Allcode, as: 'roleData',
+                            attributes: ['value_Eng', 'value_Vie']
+                        },
+                        {
+                            model: db.Allcode, as: 'positionData',
+                            attributes: ['value_Eng', 'value_Vie']
+                        },
+                        {
+                            model: db.Allcode, as: 'genderData',
+                            attributes: ['value_Eng', 'value_Vie']
+                        },
+                        {
+                            model: db.Doctor_infor,
+                            attributes: {
+                                exclude: ['id', 'doctorId']
+                            },
+                            include: [
+                                {
+                                    model: db.Specialty, as: 'belongToSpecialty',
+                                    attributes: ['name', 'htmlDescription', 'markdownDescription']
+                                },
+                            ]
+                        },
+                    ]
+                });
+
+                let currentUserId = userInUserTable.id;
+
+
+                console.log("Check user: ", userInUserTable, " and user id: ", currentUserId);
+                resolve(userInUserTable);
+
+            }
+        } catch (e) {
+            reject(e);
+        }
+    })
+}
+
 module.exports = {
     handleUserLogin: handleUserLogin,
     getAllUsersForReact: getAllUsersForReact,
@@ -283,4 +344,5 @@ module.exports = {
     deleteUserInReact: deleteUserInReact,
     editUserInReact: editUserInReact,
     getAllCodesDataService: getAllCodesDataService,
+    getAllRelativeInforsOfCurrentSystemUserService: getAllRelativeInforsOfCurrentSystemUserService,
 }

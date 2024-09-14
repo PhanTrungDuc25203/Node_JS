@@ -12,6 +12,7 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       //nơi định nghĩa các mối quan hệ, 1-n,1-1,n-1,n-n?...
+      Specialty.hasMany(models.Doctor_infor, { foreignKey: 'specialtyId', as: 'belongToSpecialty' })
     }
   }
   Specialty.init({
