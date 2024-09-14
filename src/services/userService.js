@@ -310,6 +310,14 @@ let getAllRelativeInforsOfCurrentSystemUserService = (currentUserEmail) => {
                             attributes: ['value_Eng', 'value_Vie']
                         },
                         {
+                            model: db.Booking, as: 'doctorHasAppointmentWithPatients',
+                            attributes: ['statusId', 'doctorId', 'patientId', 'date', 'patientPhoneNumber', 'patientAddress', 'patientBirthday', 'patientGender']
+                        },
+                        {
+                            model: db.Booking, as: 'patientHasAppointmentWithDoctors',
+                            attributes: ['statusId', 'doctorId', 'patientId', 'date', 'patientPhoneNumber', 'patientAddress', 'patientBirthday', 'patientGender']
+                        },
+                        {
                             model: db.Doctor_infor,
                             attributes: {
                                 exclude: ['id', 'doctorId']
@@ -327,7 +335,7 @@ let getAllRelativeInforsOfCurrentSystemUserService = (currentUserEmail) => {
                 let currentUserId = userInUserTable.id;
 
 
-                console.log("Check user: ", userInUserTable, " and user id: ", currentUserId);
+                // console.log("Check user: ", userInUserTable, " and user id: ", currentUserId);
                 resolve(userInUserTable);
 
             }
