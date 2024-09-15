@@ -3,6 +3,7 @@ import db from "../models/index";
 //nên cần so sánh giá trị băm của password chứ không phải pass thuần
 //nên cần thư viện ở dưới
 import bcrypt from 'bcryptjs';
+import moment from "moment";
 
 const salt = bcrypt.genSaltSync(10);
 
@@ -283,7 +284,7 @@ let getAllRelativeInforsOfCurrentSystemUserService = (currentUserEmail) => {
                 resolve({
                     errCode: 1,
                     errMessage: 'Missing input parameter: current user email!',
-                })
+                });
             } else {
                 let res = {};
                 let userInUserTable = await db.User.findOne({
@@ -316,7 +317,7 @@ let getAllRelativeInforsOfCurrentSystemUserService = (currentUserEmail) => {
                         },
                         {
                             model: db.Booking, as: 'patientHasAppointmentWithDoctors',
-                            attributes: ['statusId', 'doctorId', 'patientId', 'date', 'patientPhoneNumber', 'patientAddress', 'patientBirthday', 'patientGender']
+                            attributes: ['statusId', 'timeType', 'doctorId', 'patientId', 'date', 'patientPhoneNumber', 'patientAddress', 'patientBirthday', 'patientGender']
                         },
                         {
                             model: db.Doctor_infor,
@@ -333,18 +334,33 @@ let getAllRelativeInforsOfCurrentSystemUserService = (currentUserEmail) => {
                     ]
                 });
 
+                if (userInUserTable) {
+                    // Format lại các trường date và patientBirthday
+                    if (userInUserTable.doctorHasAppointmentWithPatients) {
+                        userInUserTable.doctorHasAppointmentWithPatients.forEach(appointment => {
+                            appointment.date = moment(appointment.date).format('YYYY-MM-DD');
+                            appointment.patientBirthday = moment(appointment.patientBirthday).format('YYYY-MM-DD');
+                        });
+                    }
+
+                    if (userInUserTable.patientHasAppointmentWithDoctors) {
+                        userInUserTable.patientHasAppointmentWithDoctors.forEach(appointment => {
+                            appointment.date = moment(appointment.date).format('YYYY-MM-DD');
+                            appointment.patientBirthday = moment(appointment.patientBirthday).format('YYYY-MM-DD');
+                        });
+                    }
+                }
+
                 res.errCode = 0;
                 res.errMessage = 'Get current user informations successfully!';
                 res.data = userInUserTable;
 
-                // console.log("Check user: ", userInUserTable, " and user id: ", currentUserId);
                 resolve(res);
-
             }
         } catch (e) {
             reject(e);
         }
-    })
+    });
 }
 
 module.exports = {

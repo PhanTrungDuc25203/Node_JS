@@ -177,6 +177,7 @@ let getParticularInforForDoctorPage = (inputDoctorId) => {
                                 { model: db.Allcode, as: 'priceTypeData', attributes: ['value_Eng', 'value_Vie'] },
                                 { model: db.Allcode, as: 'provinceTypeData', attributes: ['value_Eng', 'value_Vie'] },
                                 { model: db.Allcode, as: 'paymentTypeData', attributes: ['value_Eng', 'value_Vie'] },
+                                { model: db.Specialty, as: 'belongToSpecialty', attributes: ['name'] }
                             ]
                         },
 
