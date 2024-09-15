@@ -285,6 +285,7 @@ let getAllRelativeInforsOfCurrentSystemUserService = (currentUserEmail) => {
                     errMessage: 'Missing input parameter: current user email!',
                 })
             } else {
+                let res = {};
                 let userInUserTable = await db.User.findOne({
                     where: { email: currentUserEmail },
                     attributes: {
@@ -332,11 +333,12 @@ let getAllRelativeInforsOfCurrentSystemUserService = (currentUserEmail) => {
                     ]
                 });
 
-                let currentUserId = userInUserTable.id;
-
+                res.errCode = 0;
+                res.errMessage = 'Get current user informations successfully!';
+                res.data = userInUserTable;
 
                 // console.log("Check user: ", userInUserTable, " and user id: ", currentUserId);
-                resolve(userInUserTable);
+                resolve(res);
 
             }
         } catch (e) {
