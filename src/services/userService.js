@@ -290,7 +290,7 @@ let getAllRelativeInforsOfCurrentSystemUserService = (currentUserEmail) => {
                 let userInUserTable = await db.User.findOne({
                     where: { email: currentUserEmail },
                     attributes: {
-                        exclude: ['password', 'image']
+                        exclude: ['password']
                     },
                     include: [
                         {
