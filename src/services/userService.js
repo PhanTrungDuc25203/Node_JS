@@ -294,12 +294,6 @@ let getAllRelativeInforsOfCurrentSystemUserService = (currentUserEmail) => {
                     },
                     include: [
                         {
-                            model: db.Doctor_infor,
-                            attributes: {
-                                exclude: ['id', 'doctorId']
-                            }
-                        },
-                        {
                             model: db.Allcode, as: 'roleData',
                             attributes: ['value_Eng', 'value_Vie']
                         },
@@ -313,11 +307,23 @@ let getAllRelativeInforsOfCurrentSystemUserService = (currentUserEmail) => {
                         },
                         {
                             model: db.Booking, as: 'doctorHasAppointmentWithPatients',
-                            attributes: ['statusId', 'doctorId', 'patientId', 'date', 'patientPhoneNumber', 'patientAddress', 'patientBirthday', 'patientGender']
+                            attributes: ['statusId', 'timeType', 'doctorId', 'patientId', 'date', 'patientPhoneNumber', 'patientAddress', 'patientBirthday', 'patientGender'],
+                            include: [
+                                {
+                                    model: db.Allcode, as: 'appointmentTimeTypeData',
+                                    attributes: ['value_Vie', 'value_Eng']
+                                },
+                            ]
                         },
                         {
                             model: db.Booking, as: 'patientHasAppointmentWithDoctors',
-                            attributes: ['statusId', 'timeType', 'doctorId', 'patientId', 'date', 'patientPhoneNumber', 'patientAddress', 'patientBirthday', 'patientGender']
+                            attributes: ['statusId', 'timeType', 'doctorId', 'patientId', 'date', 'patientPhoneNumber', 'patientAddress', 'patientBirthday', 'patientGender'],
+                            include: [
+                                {
+                                    model: db.Allcode, as: 'appointmentTimeTypeData',
+                                    attributes: ['value_Vie', 'value_Eng']
+                                },
+                            ]
                         },
                         {
                             model: db.Doctor_infor,
