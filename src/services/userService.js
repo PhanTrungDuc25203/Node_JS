@@ -307,7 +307,7 @@ let getAllRelativeInforsOfCurrentSystemUserService = (currentUserEmail) => {
                         },
                         {
                             model: db.Booking, as: 'doctorHasAppointmentWithPatients',
-                            attributes: ['statusId', 'timeType', 'doctorId', 'patientId', 'date', 'patientPhoneNumber', 'patientAddress', 'patientBirthday', 'patientGender'],
+                            attributes: ['id', 'statusId', 'timeType', 'doctorId', 'patientId', 'date', 'patientPhoneNumber', 'patientAddress', 'patientBirthday', 'patientGender'],
                             include: [
                                 {
                                     model: db.Allcode, as: 'appointmentTimeTypeData',
@@ -317,7 +317,7 @@ let getAllRelativeInforsOfCurrentSystemUserService = (currentUserEmail) => {
                         },
                         {
                             model: db.Booking, as: 'patientHasAppointmentWithDoctors',
-                            attributes: ['statusId', 'timeType', 'doctorId', 'patientId', 'date', 'patientPhoneNumber', 'patientAddress', 'patientBirthday', 'patientGender'],
+                            attributes: ['id', 'statusId', 'timeType', 'doctorId', 'patientId', 'date', 'patientPhoneNumber', 'patientAddress', 'patientBirthday', 'patientGender'],
                             include: [
                                 {
                                     model: db.Allcode, as: 'appointmentTimeTypeData',
