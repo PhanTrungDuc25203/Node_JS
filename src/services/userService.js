@@ -290,7 +290,7 @@ let getAllRelativeInforsOfCurrentSystemUserService = (currentUserEmail) => {
                 let userInUserTable = await db.User.findOne({
                     where: { email: currentUserEmail },
                     attributes: {
-                        exclude: ['password']
+                        exclude: ['password', 'id', 'createdAt', 'updatedAt']
                     },
                     include: [
                         {
@@ -333,7 +333,7 @@ let getAllRelativeInforsOfCurrentSystemUserService = (currentUserEmail) => {
                             include: [
                                 {
                                     model: db.Specialty, as: 'belongToSpecialty',
-                                    attributes: ['name', 'htmlDescription', 'markdownDescription']
+                                    attributes: ['name']
                                 },
                             ]
                         },
