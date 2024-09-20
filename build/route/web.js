@@ -18,7 +18,6 @@ var initWebRoutes = function initWebRoutes(app) {
   router.get('/edit-crud', _homeController["default"].getEditedCRUD); //chỉnh sửa dữ liệu User
   router.post('/put-crud', _homeController["default"].putCRUD); //quay lại trang hiển thị khi chĩnh sửa thành công
   router.get('/delete-crud', _homeController["default"].deleteCRUD); //xóa dữ liệu User
-
   //những gì ở phía React thì phân biệt bằng các thêm tiền tố /api/ vào trước các route
   router.post('/api/login', _userController["default"].handleLogin);
   //viết link api lất tất cả người dùng ra cho react
@@ -41,7 +40,6 @@ var initWebRoutes = function initWebRoutes(app) {
   router.get('/api/get-doctor-schedule-by-date', _doctorController["default"].getScheduleByDate);
   //lấy thêm thông tin bác sĩ như địa chỉ phòng khám, giá khám, phương thức thanh toán
   router.get('/api/get-extra-infor-doctor-by-id', _doctorController["default"].getExtraInforDoctorByID);
-
   //lưu bệnh nhân và thông tin đặt lịch khám với bác sĩ
   router.post('/api/patient-infor-when-booking-time', _patientController["default"].patientInforWhenBookingTime);
   //trang web xác nhận chốt đặt lịch
@@ -50,7 +48,6 @@ var initWebRoutes = function initWebRoutes(app) {
   router.post('/api/create-new-specialty', _specialtyController["default"].createSpecialty);
   //lấy các specialties cho trang home
   router.get('/api/get-specialty-for-homepage', _specialtyController["default"].getSpecialtyForHomePage);
-
   //lấy dữ liệu cho trang specialty details, bao gồm thông tin của specialty và bác sĩ
   router.get('/api/get-specialty-by-id', _specialtyController["default"].getSpecialtyById);
   //lấy tất cả dữ liệu liên quan đến người đang sử dụng hệ thống bằng gamil của họ
