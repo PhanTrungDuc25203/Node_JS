@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<style>
+    table {
+        font-family: arial, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    td,
+    th {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 5px;
+    }
+
+    tr:nth-child(even) {
+        background-color: #dddddd;
+    }
+
+    .heightForRowInTable {
+        height: 35px;
+    }
+
+    .displaycrud-btn-edit {
+        height: 30px;
+        width: 60px;
+        border: 1px black;
+        background: rgb(232, 189, 110);
+        margin: 5px;
+        border-radius: 5px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .displaycrud-btn-delete {
+        height: 30px;
+        width: 60px;
+        border: 1px black;
+        background: rgb(237, 143, 143);
+        border-radius: 5px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* .upddateButtonsColumn {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    } */
+</style>
+
+<body>
+    <!-- file homeController đã xuất ra dữ liệu để hiển thị trong bảng bằng file html này rồi
+    ta cần thêm một vòng lặp để lặp qua từng index, sử dụng vòng lặp của ejs -->
+    <h1>Display CRUD from view</h1>
+    <table>
+        <tr>
+            <th class="heightForRowInTable">Email</th>
+            <th>First name</th>
+            <th>Last name</th>
+            <th>Address</th>
+            <th>Phone number</th>
+            <th>Update data</th>
+        </tr>
+        <% for(let i=0; i < dataForTable.length; i++) { %>
+            <tr>
+                <td class="heightForRowInTable">
+                    <%= dataForTable[i].email %>
+                </td>
+                <td class="heightForRowInTable">
+                    <%= dataForTable[i].firstName %>
+                </td>
+                <td class="heightForRowInTable">
+                    <%= dataForTable[i].lastName %>
+                </td>
+                <td class="heightForRowInTable">
+                    <%= dataForTable[i].address %>
+                </td>
+                <td class="heightForRowInTable">
+                    <%= dataForTable[i].phoneNumber %>
+                </td>
+                <td class="heightForRowInTable upddateButtonsColumn">
+                    <a href="http://localhost:8080/edit-crud?id=<%=dataForTable[i].id %>" class="displaycrud-btn-edit"
+                        type="button">
+                        Edit
+                    </a>
+                    <a href="http://localhost:8080/delete-crud?id=<%=dataForTable[i].id %>"
+                        class="displaycrud-btn-delete" style="border: 1px black; background:rgb(237, 143, 143)"
+                        type="button">
+                        Delete
+                    </a>
+                </td>
+            </tr>
+            <% } %>
+    </table>
+</body>
+
+</html>
