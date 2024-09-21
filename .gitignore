@@ -4,5 +4,4 @@
 .idea/
 .env
 package-lock.json
-/build
 testdbforcheck.sql

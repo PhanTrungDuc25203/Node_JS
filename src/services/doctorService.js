@@ -264,7 +264,7 @@ let getScheduleByDateService = (doctorId, date) => {
             if (!doctorId || !date) {
                 resolve({
                     errCode: 1,
-                    errMessage: 'Missing required parameter: doctorId or date',
+                    errMessage: 'Missing required parameter: doctorId or date!',
                 })
             } else {
                 let formattedDate = moment(Number(date)).format('YYYY-MM-DD 00:00:00');
@@ -281,11 +281,12 @@ let getScheduleByDateService = (doctorId, date) => {
                 })
 
                 if (!scheduleData) {
-                    scheduleData = [];
+                    scheduleData = ["no schedule"];
                 }
 
                 resolve({
                     errCode: 0,
+                    errMessage: "Get doctor schedule successfully!",
                     data: scheduleData,
                 })
             }
