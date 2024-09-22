@@ -426,7 +426,7 @@ var getScheduleByDateService = function getScheduleByDateService(doctorId, date)
             }
             resolve({
               errCode: 1,
-              errMessage: 'Missing required parameter: doctorId or date'
+              errMessage: 'Missing required parameter: doctorId or date!'
             });
             _context6.next = 11;
             break;
@@ -449,10 +449,11 @@ var getScheduleByDateService = function getScheduleByDateService(doctorId, date)
           case 8:
             scheduleData = _context6.sent;
             if (!scheduleData) {
-              scheduleData = [];
+              scheduleData = ["no schedule"];
             }
             resolve({
               errCode: 0,
+              errMessage: "Get doctor schedule successfully!",
               data: scheduleData
             });
           case 11:

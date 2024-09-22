@@ -268,18 +268,25 @@ let getScheduleByDateService = (doctorId, date) => {
                 })
             } else {
                 let formattedDate = moment(Number(date)).format('YYYY-MM-DD 00:00:00');
+                console.log("Check formatted date: ", formattedDate, "type of date: ", typeof formattedDate);
+
+                // Chuyển thành đối tượng Date để khớp với kiểu DATETIME của MySQL
+                let mysqlFormattedDate = new Date(formattedDate);
+                console.log("Formatted date for MySQL: ", mysqlFormattedDate, "type of mysqlFormattedDate: ", typeof mysqlFormattedDate);
+
                 let scheduleData = await db.Schedule.findAll({
                     where: {
                         doctorId: doctorId,
-                        date: formattedDate,
+                        date: mysqlFormattedDate, // mysqlFormattedDate bây giờ là đối tượng Date
                     },
                     include: [
                         { model: db.Allcode, as: 'timeTypeData', attributes: ['value_Eng', 'value_Vie'] },
                     ],
                     raw: false,
                     nest: true,
-                })
+                });
 
+                console.log("Check schedule data: ", scheduleData);
                 if (!scheduleData) {
                     scheduleData = ["no schedule"];
                 }

@@ -72,6 +72,7 @@ let createTimeframesForDoctorSchedule = async (req, res) => {
 
 let getScheduleByDate = async (req, res) => {
     try {
+        console.log("Check parameter: ", req.query.doctorId, req.query.date);
         let infor = await doctorService.getScheduleByDateService(req.query.doctorId, req.query.date);
         return res.status(200).json(infor);
     } catch (e) {

@@ -167,24 +167,25 @@ var getScheduleByDate = /*#__PURE__*/function () {
       while (1) switch (_context6.prev = _context6.next) {
         case 0:
           _context6.prev = 0;
-          _context6.next = 3;
+          console.log("Check parameter: ", req.query.doctorId, req.query.date);
+          _context6.next = 4;
           return _doctorService["default"].getScheduleByDateService(req.query.doctorId, req.query.date);
-        case 3:
+        case 4:
           infor = _context6.sent;
           return _context6.abrupt("return", res.status(200).json(infor));
-        case 7:
-          _context6.prev = 7;
+        case 8:
+          _context6.prev = 8;
           _context6.t0 = _context6["catch"](0);
           console.log(_context6.t0);
           return _context6.abrupt("return", res.status(200).json({
             errCode: -1,
             errMessage: 'Get schedule by date for a doctor error from server!'
           }));
-        case 11:
+        case 12:
         case "end":
           return _context6.stop();
       }
-    }, _callee6, null, [[0, 7]]);
+    }, _callee6, null, [[0, 8]]);
   }));
   return function getScheduleByDate(_x11, _x12) {
     return _ref6.apply(this, arguments);

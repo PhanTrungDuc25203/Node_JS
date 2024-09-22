@@ -36,7 +36,7 @@ function _cleanOldRecords() {
           });
         case 6:
           deletedCount = _context.sent;
-          console.log("\u0110\xE3 x\xF3a ".concat(deletedCount, " b\u1EA3n ghi c\u0169 h\u01A1n ").concat(daysAgo, " ng\xE0y."));
+          console.log("\u0110\xE3 x\xF3a ".concat(deletedCount, " b\u1EA3n ghi c\u0169 h\u01A1n ").concat(daysAgo, " ng\xE0y trong b\u1EA3ng Schedule."));
           _context.next = 13;
           break;
         case 10:
