@@ -6,11 +6,17 @@ import initWebRoutes from './route/web';
 import connectDB from './config/connectDB';
 import cors from 'cors';
 import { cleanOldRecords } from './services/cleanupScheduleService';
+import helmet from 'helmet'; // for security
+import compression from 'compression'; // for response size optimization
+import morgan from 'morgan'; // for logging
 
 require('dotenv').config();
 // câu lệnh trên có thể gọi tới hàm config của thư viện dotenv và giúp 
 // chạy được dòng "let port = process.env.PORT || 6969;"
 let app = express();
+app.use(helmet());
+app.use(morgan('combined'));
+app.use(compression());
 // app.use(cors({ origin: true }));
 app.use(cors({
     credentials: true,
