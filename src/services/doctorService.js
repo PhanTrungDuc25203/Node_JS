@@ -267,17 +267,15 @@ let getScheduleByDateService = (doctorId, date) => {
                     errMessage: 'Missing required parameter: doctorId or date!',
                 })
             } else {
-                let formattedDate = moment(Number(date)).format('YYYY-MM-DD 00:00:00');
-                console.log("Check formatted date: ", formattedDate, "type of date: ", typeof formattedDate);
-
-                // Chuyển thành đối tượng Date để khớp với kiểu DATETIME của MySQL
-                let mysqlFormattedDate = new Date(formattedDate);
-                console.log("Formatted date for MySQL: ", mysqlFormattedDate, "type of mysqlFormattedDate: ", typeof mysqlFormattedDate);
+                // let formattedDate = moment(Number(date)).format('YYYY-MM-DD 00:00:00');
+                console.log("Check formatted date: ", date, "type of date: ", typeof date);
+                let numberDate = Number(date);
+                console.log("Check formatted date (number): ", numberDate, "type of date: ", typeof numberDate);
 
                 let scheduleData = await db.Schedule.findAll({
                     where: {
                         doctorId: doctorId,
-                        date: mysqlFormattedDate, // mysqlFormattedDate bây giờ là đối tượng Date
+                        date: numberDate,
                     },
                     include: [
                         { model: db.Allcode, as: 'timeTypeData', attributes: ['value_Eng', 'value_Vie'] },
