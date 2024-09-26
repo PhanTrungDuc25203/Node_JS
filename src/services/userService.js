@@ -371,6 +371,7 @@ let getAllRelativeInforsOfCurrentSystemUserService = (currentUserEmail) => {
 
 module.exports = {
     handleUserLogin: handleUserLogin,
+    checkUserEmail: checkUserEmail,
     getAllUsersForReact: getAllUsersForReact,
     createNewUserInReact: createNewUserInReact,
     deleteUserInReact: deleteUserInReact,

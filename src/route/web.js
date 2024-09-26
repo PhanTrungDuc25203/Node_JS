@@ -26,6 +26,7 @@ let initWebRoutes = (app) => {
     router.post('/api/create-new-user-in-react', userController.handleCreateNewUserInReact);
     router.put('/api/edit-user-in-react', userController.handleEditUserInReact);
     router.delete('/api/delete-user-in-react', userController.handleDeleteUserInReact);
+    router.get('/api/check-user-email-already-exist', userController.checkEmailWetherAlreadyExist);
 
 
     router.get('/api/getallcodesdata', userController.getAllCodesData);

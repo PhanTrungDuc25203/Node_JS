@@ -70,6 +70,11 @@ let handleCreateNewUserInReact = async (req, res) => {
     return res.status(200).json(message);
 }
 
+let checkEmailWetherAlreadyExist = async (req, res) => {
+    let alreadyExist = await userService.checkUserEmail(req.query.email);
+    return res.status(200).json(alreadyExist);
+}
+
 let handleEditUserInReact = async (req, res) => {
     let data = req.body;
     let message = await userService.editUserInReact(data);
@@ -124,6 +129,7 @@ module.exports = {
     handleLogin: handleLogin,
     handleGetAllUsersForReact: handleGetAllUsersForReact,
     handleCreateNewUserInReact: handleCreateNewUserInReact,
+    checkEmailWetherAlreadyExist: checkEmailWetherAlreadyExist,
     handleEditUserInReact: handleEditUserInReact,
     handleDeleteUserInReact: handleDeleteUserInReact,
     getAllCodesData: getAllCodesData,
