@@ -52,17 +52,36 @@ let patientInforWhenBookingTimeService = (data) => {
                 });
 
                 //upsert data
+                let fullName = data.fullname.trim();  // loại bỏ khoảng trắng thừa nếu có
+                let lastSpaceIndex = fullName.lastIndexOf(' ');
+
+                let firstName = lastSpaceIndex === -1 ? fullName : fullName.slice(lastSpaceIndex + 1);
+                let lastName = lastSpaceIndex === -1 ? '' : fullName.slice(0, lastSpaceIndex);
+
                 let patient = await db.User.findOrCreate({
                     where: { email: data.email },
                     defaults: {
                         email: data.email,
-                        lastName: data.fullname,
+                        lastName: lastName,
+                        firstName: firstName,
                         phoneNumber: data.phoneNumber,
                         address: data.address,
                         gender: data.selectedGender,
                         roleId: 'R3',
                     }
                 });
+
+                // let patient = await db.User.findOrCreate({
+                //     where: { email: data.email },
+                //     defaults: {
+                //         email: data.email,
+                //         lastName: data.fullname,
+                //         phoneNumber: data.phoneNumber,
+                //         address: data.address,
+                //         gender: data.selectedGender,
+                //         roleId: 'R3',
+                //     }
+                // });
 
                 //create a booking records
                 if (patient && patient[0]) {
