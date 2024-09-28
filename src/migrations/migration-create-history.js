@@ -10,11 +10,11 @@ module.exports = {
                 primaryKey: true,
                 type: Sequelize.INTEGER
             },
-            patientId: {
-                type: Sequelize.INTEGER
+            patientEmail: {
+                type: Sequelize.STRING
             },
-            doctorId: {
-                type: Sequelize.INTEGER
+            doctorEmail: {
+                type: Sequelize.STRING
             },
             description: {
                 type: Sequelize.TEXT
