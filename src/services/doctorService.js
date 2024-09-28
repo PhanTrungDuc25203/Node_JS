@@ -338,35 +338,39 @@ let getExtraInforDoctorByIDService = (inputId) => {
 
 }
 
-let saveAppointmentHistoryService = (inputData)=>{
+let saveAppointmentHistoryService = (inputData) => {
     return new Promise(async (resolve, reject) => {
         try {
-            if (!inputData.patientEmail || !inputData.doctorEmail || !inputData.description || !inputData.fileContent) {
+            // Kiểm tra các tham số bắt buộc
+            console.log("Check data: ", inputData);
+            if (!inputData.patientEmail || !inputData.doctorEmail || !inputData.description || !inputData.files) {
                 resolve({
                     errCode: 1,
-                    errMessage: 'Missing required parameters: timeframe data!',
-                })
+                    errMessage: 'Missing required parameters!',
+                });
             } else {
-                
-                    // Lưu lịch sử cuộc hẹn vào bảng histories
-                    await db.History.create({
-                        patientEmail: inputData.patientEmail, // meetPatientId
-                        doctorEmail: inputData.doctorEmail,            // doctorId từ email
-                        description: 'S3',              // Hardcode description là 'S3'
-                        fileContent: inputData.fileContent, // Nội dung tệp dưới dạng BLOB
-                    });
+                // Chuyển đổi file từ base64 sang buffer
+                let fileBuffer = Buffer.from(inputData.files, 'base64');
 
-                    resolve({
-                        errCode: 0,
-                        errMessage: 'Save appointment history successfully!',
-                    });
+                // Lưu lịch sử cuộc hẹn vào bảng history
+                await db.History.create({
+                    patientEmail: inputData.patientEmail,
+                    doctorEmail: inputData.doctorEmail,
+                    description: inputData.description, // Cho phép mô tả động
+                    files: fileBuffer,  // Lưu file dưới dạng buffer
+                });
+
+                resolve({
+                    errCode: 0,
+                    errMessage: 'Save appointment history successfully!',
+                });
             }
-
         } catch (e) {
             reject(e);
         }
     })
 }
+
 
 module.exports = {
     getEliteDoctorForHomePage: getEliteDoctorForHomePage,
