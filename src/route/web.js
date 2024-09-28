@@ -59,6 +59,8 @@ let initWebRoutes = (app) => {
     //lấy tất cả dữ liệu liên quan đến người đang sử dụng hệ thống bằng gamil của họ
     router.get('/api/get-all-relative-infors-of-current-system-user', userController.getAllRelativeInforsOfCurrentSystemUser);
 
+    router.post('/api/save-appointment-history', doctorController.saveAppointmentHistory);
+
     return app.use("/", router);
 }
 module.exports = initWebRoutes;

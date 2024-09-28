@@ -97,6 +97,19 @@ let getExtraInforDoctorByID = async (req, res) => {
     }
 }
 
+let saveAppointmentHistory = async (req, res) =>{
+    try {
+        let infor = await doctorService.saveAppointmentHistoryService(req.body);
+        return res.status(200).json(infor);
+    } catch (e) {
+        console.log(e);
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: "Save appointment history fail from server!",
+        })
+    }
+}
+
 module.exports = {
     getEliteDoctorForHomePage: getEliteDoctorForHomePage,
     getAllDoctorsForDoctorArticlePage: getAllDoctorsForDoctorArticlePage,
@@ -105,4 +118,5 @@ module.exports = {
     createTimeframesForDoctorSchedule: createTimeframesForDoctorSchedule,
     getScheduleByDate: getScheduleByDate,
     getExtraInforDoctorByID: getExtraInforDoctorByID,
+    saveAppointmentHistory: saveAppointmentHistory,
 }

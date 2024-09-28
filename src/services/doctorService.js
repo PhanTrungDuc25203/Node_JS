@@ -338,6 +338,36 @@ let getExtraInforDoctorByIDService = (inputId) => {
 
 }
 
+let saveAppointmentHistoryService = (inputData)=>{
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!inputData.patientEmail || !inputData.doctorEmail || !inputData.description || !inputData.fileContent) {
+                resolve({
+                    errCode: 1,
+                    errMessage: 'Missing required parameters: timeframe data!',
+                })
+            } else {
+                
+                    // Lưu lịch sử cuộc hẹn vào bảng histories
+                    await db.History.create({
+                        patientEmail: inputData.patientEmail, // meetPatientId
+                        doctorEmail: inputData.doctorEmail,            // doctorId từ email
+                        description: 'S3',              // Hardcode description là 'S3'
+                        fileContent: inputData.fileContent, // Nội dung tệp dưới dạng BLOB
+                    });
+
+                    resolve({
+                        errCode: 0,
+                        errMessage: 'Save appointment history successfully!',
+                    });
+            }
+
+        } catch (e) {
+            reject(e);
+        }
+    })
+}
+
 module.exports = {
     getEliteDoctorForHomePage: getEliteDoctorForHomePage,
     getAllDoctorsForDoctorArticlePage: getAllDoctorsForDoctorArticlePage,
@@ -346,4 +376,5 @@ module.exports = {
     bulkCreateTimeframesForDoctorService: bulkCreateTimeframesForDoctorService,
     getScheduleByDateService: getScheduleByDateService,
     getExtraInforDoctorByIDService: getExtraInforDoctorByIDService,
+    saveAppointmentHistoryService: saveAppointmentHistoryService,
 }
