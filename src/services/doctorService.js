@@ -343,7 +343,7 @@ let saveAppointmentHistoryService = (inputData) => {
         try {
             // Kiểm tra các tham số bắt buộc
             console.log("Check data: ", inputData);
-            if (!inputData.patientEmail || !inputData.doctorEmail || !inputData.description || !inputData.files) {
+            if (!inputData.appointmentId || !inputData.patientEmail || !inputData.doctorEmail || !inputData.description || !inputData.files) {
                 resolve({
                     errCode: 1,
                     errMessage: 'Missing required parameters!',
@@ -359,6 +359,20 @@ let saveAppointmentHistoryService = (inputData) => {
                     description: inputData.description, // Cho phép mô tả động
                     files: fileBuffer,  // Lưu file dưới dạng buffer
                 });
+
+                //đổi trường status của lịch hẹn ở trang booking thành S3
+                let booking = await db.Booking.findOne({
+                    where: { id: inputData.appointmentId },
+                    //ở file config.json đã chuyển raw:true nên
+                    //hàm update và delete không thể chạy, khi chạy nhớ chuyển raw: false
+                    raw: false
+                })
+
+                if (booking) {
+                    booking.statusId = 'S3';
+
+                    await booking.save();
+                }
 
                 resolve({
                     errCode: 0,
