@@ -347,43 +347,61 @@ let saveAppointmentHistoryService = (inputData) => {
                 resolve({
                     errCode: 1,
                     errMessage: 'Missing required parameters!',
-                });
+                })
             } else {
-                // Chuyển đổi file từ base64 sang buffer
+                let existingHistory = await db.History.findOne({
+                    where: {
+                        patientEmail: inputData.patientEmail,
+                        doctorEmail: inputData.doctorEmail,
+                    },
+                    order: [['createdAt', 'DESC']],
+                })
+
+                if (existingHistory) {
+                    let currentTime = new Date();
+                    let createdTime = new Date(existingHistory.createdAt);
+                    // nếu history mới và cũ cách nhau chưa đầy 1 giờ thì thôi abacut
+                    let timeDifference = (currentTime - createdTime) / (1000 * 60);
+
+                    if (timeDifference < 60) {
+                        resolve({
+                            errCode: 2,
+                            errMessage: 'Cannot save history, another record exists within the last hour.',
+                        });
+                        return;
+                    }
+                }
+
                 let fileBuffer = Buffer.from(inputData.files, 'base64');
 
-                // Lưu lịch sử cuộc hẹn vào bảng history
                 await db.History.create({
                     patientEmail: inputData.patientEmail,
                     doctorEmail: inputData.doctorEmail,
-                    description: inputData.description, // Cho phép mô tả động
-                    files: fileBuffer,  // Lưu file dưới dạng buffer
-                });
+                    description: inputData.description,
+                    files: fileBuffer,
+                })
 
-                //đổi trường status của lịch hẹn ở trang booking thành S3
                 let booking = await db.Booking.findOne({
                     where: { id: inputData.appointmentId },
-                    //ở file config.json đã chuyển raw:true nên
-                    //hàm update và delete không thể chạy, khi chạy nhớ chuyển raw: false
-                    raw: false
+                    raw: false,
                 })
 
                 if (booking) {
                     booking.statusId = 'S3';
-
                     await booking.save();
                 }
 
                 resolve({
                     errCode: 0,
                     errMessage: 'Save appointment history successfully!',
-                });
+                })
             }
         } catch (e) {
             reject(e);
         }
     })
 }
+
 
 
 module.exports = {

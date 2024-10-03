@@ -86,7 +86,9 @@ let patientInforWhenBookingTimeService = (data) => {
                 //create a booking records
                 if (patient && patient[0]) {
                     await db.Booking.findOrCreate({
-                        where: { patientId: patient[0].id, doctorId: data.doctorId },
+                        where: {//khi khác S3 thì không lưu bản ghi mới: db.Sequelize.Op.ne là not equal = ne
+                            patientId: patient[0].id, doctorId: data.doctorId, statusId: { [db.Sequelize.Op.ne]: 'S3' }
+                        },
                         defaults: {
                             statusId: 'S1', //hardcode
                             doctorId: data.doctorId,
