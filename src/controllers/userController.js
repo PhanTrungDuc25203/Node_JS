@@ -117,10 +117,25 @@ let getAllRelativeInforsOfCurrentSystemUser = async (req, res) => {
             return res.status(200).json(data);
         }, 500)
     } catch (e) {
-        console.log(`Get all relative infors of current system's user: `, e)
+        console.log(`Get all relative infors of current system's user error: `, e)
         return res.status(200).json({
             errCode: -1,
             errMessage: `Get all relative infors of current system's user error from server!`,
+        })
+    }
+}
+
+let getAllRelativeBookingsOfCurrentSystemUser = async (req, res) => {
+    try {
+        setTimeout(async () => {
+            let data = await userService.getAllRelativeBookingsOfCurrentSystemUserService(req.query.email);
+            return res.status(200).json(data);
+        }, 200)
+    } catch (e) {
+        console.log(`Get all relative bookings of current system's user error: `, e)
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: `Get all relative bookings of current system's user error from server!`,
         })
     }
 }
@@ -134,4 +149,5 @@ module.exports = {
     handleDeleteUserInReact: handleDeleteUserInReact,
     getAllCodesData: getAllCodesData,
     getAllRelativeInforsOfCurrentSystemUser: getAllRelativeInforsOfCurrentSystemUser,
+    getAllRelativeBookingsOfCurrentSystemUser: getAllRelativeBookingsOfCurrentSystemUser,
 }

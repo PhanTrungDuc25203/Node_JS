@@ -337,26 +337,26 @@ let getAllRelativeInforsOfCurrentSystemUserService = (currentUserEmail) => {
                             model: db.Allcode, as: 'genderData',
                             attributes: ['value_Eng', 'value_Vie']
                         },
-                        {
-                            model: db.Booking, as: 'doctorHasAppointmentWithPatients',
-                            attributes: ['id', 'statusId', 'timeType', 'doctorId', 'patientId', 'date', 'patientPhoneNumber', 'patientAddress', 'patientBirthday', 'patientGender'],
-                            include: [
-                                {
-                                    model: db.Allcode, as: 'appointmentTimeTypeData',
-                                    attributes: ['value_Vie', 'value_Eng']
-                                },
-                            ]
-                        },
-                        {
-                            model: db.Booking, as: 'patientHasAppointmentWithDoctors',
-                            attributes: ['id', 'statusId', 'timeType', 'doctorId', 'patientId', 'date', 'patientPhoneNumber', 'patientAddress', 'patientBirthday', 'patientGender'],
-                            include: [
-                                {
-                                    model: db.Allcode, as: 'appointmentTimeTypeData',
-                                    attributes: ['value_Vie', 'value_Eng']
-                                },
-                            ]
-                        },
+                        // {
+                        //     model: db.Booking, as: 'doctorHasAppointmentWithPatients',
+                        //     attributes: ['id', 'statusId', 'timeType', 'doctorId', 'patientId', 'date', 'patientPhoneNumber', 'patientAddress', 'patientBirthday', 'patientGender'],
+                        //     include: [
+                        //         {
+                        //             model: db.Allcode, as: 'appointmentTimeTypeData',
+                        //             attributes: ['value_Vie', 'value_Eng']
+                        //         },
+                        //     ]
+                        // },
+                        // {
+                        //     model: db.Booking, as: 'patientHasAppointmentWithDoctors',
+                        //     attributes: ['id', 'statusId', 'timeType', 'doctorId', 'patientId', 'date', 'patientPhoneNumber', 'patientAddress', 'patientBirthday', 'patientGender'],
+                        //     include: [
+                        //         {
+                        //             model: db.Allcode, as: 'appointmentTimeTypeData',
+                        //             attributes: ['value_Vie', 'value_Eng']
+                        //         },
+                        //     ]
+                        // },
                         {
                             model: db.Doctor_infor,
                             attributes: {
@@ -401,6 +401,57 @@ let getAllRelativeInforsOfCurrentSystemUserService = (currentUserEmail) => {
     });
 }
 
+let getAllRelativeBookingsOfCurrentSystemUserService = (currentUserEmail) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!currentUserEmail) {
+                resolve({
+                    errCode: 1,
+                    errMessage: 'Missing input parameter: current user email!',
+                });
+            } else {
+                let res = {};
+                let allBookingsOfCurrentUser = await db.User.findOne({
+                    where: { email: currentUserEmail },
+                    attributes: {
+                        exclude: ['password', 'id', 'createdAt', 'updatedAt', 'firstName', 'lastName', 'address', 'gender', 'phoneNumber', 'image', 'roleId', 'positionId']
+                    },
+                    include: [
+                        {
+                            model: db.Booking, as: 'doctorHasAppointmentWithPatients',
+                            attributes: ['id', 'statusId', 'timeType', 'doctorId', 'patientId', 'date', 'patientPhoneNumber', 'patientAddress', 'patientBirthday', 'patientGender'],
+                            include: [
+                                {
+                                    model: db.Allcode, as: 'appointmentTimeTypeData',
+                                    attributes: ['value_Vie', 'value_Eng']
+                                },
+                            ]
+                        },
+                        {
+                            model: db.Booking, as: 'patientHasAppointmentWithDoctors',
+                            attributes: ['id', 'statusId', 'timeType', 'doctorId', 'patientId', 'date', 'patientPhoneNumber', 'patientAddress', 'patientBirthday', 'patientGender'],
+                            include: [
+                                {
+                                    model: db.Allcode, as: 'appointmentTimeTypeData',
+                                    attributes: ['value_Vie', 'value_Eng']
+                                },
+                            ]
+                        },
+                    ]
+                });
+
+                res.errCode = 0;
+                res.errMessage = 'Get current user bookings successfully!';
+                res.data = allBookingsOfCurrentUser;
+
+                resolve(res);
+            }
+        } catch (e) {
+            reject(e);
+        }
+    });
+}
+
 module.exports = {
     handleUserLogin: handleUserLogin,
     checkUserEmail: checkUserEmail,
@@ -410,4 +461,5 @@ module.exports = {
     editUserInReact: editUserInReact,
     getAllCodesDataService: getAllCodesDataService,
     getAllRelativeInforsOfCurrentSystemUserService: getAllRelativeInforsOfCurrentSystemUserService,
+    getAllRelativeBookingsOfCurrentSystemUserService: getAllRelativeBookingsOfCurrentSystemUserService
 }
