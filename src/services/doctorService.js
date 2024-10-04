@@ -343,7 +343,9 @@ let saveAppointmentHistoryService = (inputData) => {
         try {
             // Kiểm tra các tham số bắt buộc
             console.log("Check data: ", inputData);
-            if (!inputData.appointmentId || !inputData.patientEmail || !inputData.doctorEmail || !inputData.description || !inputData.files) {
+            if (!inputData.appointmentId || !inputData.patientEmail || !inputData.doctorEmail ||
+                !inputData.description || !inputData.files || !inputData.appointmentDate ||
+                !inputData.appointmentTimeFrame) {
                 resolve({
                     errCode: 1,
                     errMessage: 'Missing required parameters!',
@@ -372,11 +374,23 @@ let saveAppointmentHistoryService = (inputData) => {
                     }
                 }
 
+                //chuyển đổi kiểu dữ liệu
                 let fileBuffer = Buffer.from(inputData.files, 'base64');
-
+                let formattedDate = moment(inputData.appointmentDate, 'DD-MM-YYYY').format('YYYY-MM-DD 00:00:00');
+                let formettedTimeFrame = await db.Allcode.findOne({
+                    where: {
+                        type: 'TIME',
+                        value_Vie: inputData.appointmentTimeFrame,
+                    },
+                    attributes: ['keyMap'],
+                })
+                //lưu dữ liệu history
                 await db.History.create({
+                    appointmentId: inputData.appointmentId,
                     patientEmail: inputData.patientEmail,
                     doctorEmail: inputData.doctorEmail,
+                    appointmentDate: formattedDate,
+                    appointmentTimeFrame: formettedTimeFrame.keyMap,
                     description: inputData.description,
                     files: fileBuffer,
                 })
@@ -402,7 +416,35 @@ let saveAppointmentHistoryService = (inputData) => {
     })
 }
 
+let getAppointmentHistoriesByDoctorEmailService = (inputDoctorEmail) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!inputDoctorEmail) {
+                resolve({
+                    errCode: 1,
+                    errMessage: `Missing required parameters: doctor's email!`,
+                })
+            } else {
 
+                let data = await db.History.findAll({
+                    where: { doctorEmail: inputDoctorEmail },
+                    raw: false,
+                })
+                if (!data) {
+                    data = {};
+                }
+
+                resolve({
+                    data: data,
+                    errCode: 0,
+                    errMessage: 'Get appointment histories successfully!',
+                })
+            }
+        } catch (e) {
+            reject(e);
+        }
+    })
+}
 
 module.exports = {
     getEliteDoctorForHomePage: getEliteDoctorForHomePage,
@@ -413,4 +455,5 @@ module.exports = {
     getScheduleByDateService: getScheduleByDateService,
     getExtraInforDoctorByIDService: getExtraInforDoctorByIDService,
     saveAppointmentHistoryService: saveAppointmentHistoryService,
+    getAppointmentHistoriesByDoctorEmailService: getAppointmentHistoriesByDoctorEmailService,
 }

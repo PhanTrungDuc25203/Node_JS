@@ -60,6 +60,8 @@ let initWebRoutes = (app) => {
     router.get('/api/get-all-relative-infors-of-current-system-user', userController.getAllRelativeInforsOfCurrentSystemUser);
 
     router.post('/api/save-appointment-history', doctorController.saveAppointmentHistory);
+    //lấy thông tin trong bảng history
+    router.get('/api/get-appointement-histories-by-doctor-email', doctorController.getAppointmentHistoriesByDoctorEmail);
 
     return app.use("/", router);
 }

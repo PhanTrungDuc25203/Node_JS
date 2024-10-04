@@ -10,10 +10,20 @@ module.exports = {
                 primaryKey: true,
                 type: Sequelize.INTEGER
             },
+            appointmentId: {
+                allowNull: false,
+                type: Sequelize.INTEGER
+            },
             patientEmail: {
                 type: Sequelize.STRING
             },
             doctorEmail: {
+                type: Sequelize.STRING
+            },
+            appointmentDate: {
+                type: Sequelize.DATE
+            },
+            appointmentTimeFrame: {
                 type: Sequelize.STRING
             },
             description: {
