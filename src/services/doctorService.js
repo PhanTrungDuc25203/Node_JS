@@ -428,6 +428,12 @@ let getAppointmentHistoriesByDoctorEmailService = (inputDoctorEmail) => {
 
                 let data = await db.History.findAll({
                     where: { doctorEmail: inputDoctorEmail },
+                    attributes: {
+                        exclude: ['createdAt', 'updatedAt', 'id']
+                    },
+                    include: [
+                        { model: db.Allcode, as: 'appointmentTimeFrameData', attributes: ['value_Eng', 'value_Vie'] },
+                    ],
                     raw: false,
                 })
                 if (!data) {

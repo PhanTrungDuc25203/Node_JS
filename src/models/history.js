@@ -10,8 +10,7 @@ module.exports = (sequelize, DataTypes) => {
          * The `models/index` file will call this method automatically.
          */
         static associate(models) {
-            // define association here
-            //nơi định nghĩa các mối quan hệ, 1-n,1-1,n-1,n-n?...
+            History.belongsTo(models.Allcode, { foreignKey: 'appointmentTimeFrame', targetKey: 'keyMap', as: 'appointmentTimeFrameData' })
         }
     }
     History.init({
