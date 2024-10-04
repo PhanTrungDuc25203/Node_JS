@@ -83,7 +83,10 @@ let checkUserEmail = (userEmail) => {
     return new Promise(async (resolve, reject) => {
         try {
             let user = await db.User.findOne({
-                where: { email: userEmail }
+                where: {
+                    email: userEmail,
+                    password: { [db.Sequelize.Op.ne]: '' }
+                }
             })
             if (user) {
                 resolve(true);
@@ -137,23 +140,52 @@ let createNewUserInReact = (data) => {
                 });
             } else {
                 let hashPasswordFromBcrypt = await hashUserPassword(data.password);
-                await db.User.create({
-                    email: data.email,
-                    password: hashPasswordFromBcrypt,
-                    firstName: data.firstName,
-                    lastName: data.lastName,
-                    address: data.address,
-                    phoneNumber: data.phoneNumber,
-                    gender: data.gender,
-                    //vì chưa có chỗ nhập image và position nên tôi sẽ để là một string bất kì thôi
-                    image: data.image,
-                    roleId: data.roleId,
-                    positionId: data.positionId,
-                })
-                resolve({
-                    errCode: 0,
-                    message: 'Create user successfully!',
+
+                // Tìm người dùng dựa trên email
+                let existingUser = await db.User.findOne({
+                    where: { email: data.email }
                 });
+
+                if (existingUser) {
+                    // Nếu người dùng đã tồn tại, cập nhật thông tin
+                    await db.User.update({
+                        password: hashPasswordFromBcrypt,
+                        firstName: data.firstName,
+                        lastName: data.lastName,
+                        address: data.address,
+                        phoneNumber: data.phoneNumber,
+                        gender: data.gender,
+                        image: data.image, // Cập nhật image nếu cần
+                        roleId: data.roleId,
+                        positionId: data.positionId,
+                    }, {
+                        where: { email: data.email }
+                    });
+
+                    resolve({
+                        errCode: 0,
+                        message: 'Update user successfully!',
+                    });
+                } else {
+                    // Nếu người dùng không tồn tại, tạo mới
+                    await db.User.create({
+                        email: data.email,
+                        password: hashPasswordFromBcrypt,
+                        firstName: data.firstName,
+                        lastName: data.lastName,
+                        address: data.address,
+                        phoneNumber: data.phoneNumber,
+                        gender: data.gender,
+                        image: data.image, // Gán giá trị cho image
+                        roleId: data.roleId,
+                        positionId: data.positionId,
+                    });
+
+                    resolve({
+                        errCode: 0,
+                        message: 'Create user successfully!',
+                    });
+                }
             }
         } catch (e) {
             reject(e);
