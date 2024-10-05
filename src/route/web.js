@@ -4,6 +4,7 @@ import userController from "../controllers/userController";
 import doctorController from "../controllers/doctorController";
 import patientController from "../controllers/patientController";
 import specialtyController from "../controllers/specialtyController";
+import medicalFacilityController from "../controllers/medicalFacilityController";
 
 let router = express.Router();
 
@@ -53,6 +54,8 @@ let initWebRoutes = (app) => {
     router.post('/api/create-new-specialty', specialtyController.createSpecialty);
     //lấy các specialties cho trang home
     router.get('/api/get-specialty-for-homepage', specialtyController.getSpecialtyForHomePage);
+    //lấy một số trường của các specialties cho trang tạo cơ sở y tế (để đỡ nghẽn mạng)
+    router.get('/api/get-specialty-and-province-for-medical-facility-manage-page', specialtyController.getSpecialtyAndProvinceForMedicalFacilityManagePage);
 
     //lấy dữ liệu cho trang specialty details, bao gồm thông tin của specialty và bác sĩ
     router.get('/api/get-specialty-by-id', specialtyController.getSpecialtyById);
@@ -63,6 +66,9 @@ let initWebRoutes = (app) => {
     router.post('/api/save-appointment-history', doctorController.saveAppointmentHistory);
     //lấy thông tin trong bảng history
     router.get('/api/get-appointement-histories-by-doctor-email', doctorController.getAppointmentHistoriesByDoctorEmail);
+
+    //tạo thông tin cho một cơ sở y tế
+    router.post('/api/create-medical-facility', medicalFacilityController.createMedicalFacility);
 
     return app.use("/", router);
 }

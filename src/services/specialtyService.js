@@ -99,7 +99,34 @@ let getSpecialtyByIdService = (inputId, location) => {
                 })
             }
         } catch (e) {
+            reject(e);
+        }
+    })
+}
 
+let getSpecialtyAndProvinceForMedicalFacilityManagePageService = () => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let specialties = await db.Specialty.findAll({
+                attributes: {
+                    exclude: ['htmlDescription', 'markdownDescription', 'specialtyImage', 'createdAt', 'updatedAt'],
+                },
+                order: [['createdAt', 'ASC']],
+                raw: true,
+            })
+            let provinces = await db.Allcode.findAll({
+                where: {
+                    type: 'PROVINCE',
+                },
+                attributes: ['value_Vie', 'value_Eng', 'keyMap'],
+            })
+            resolve({
+                errCode: 0,
+                specialtyData: specialties,
+                provinceData: provinces,
+            })
+        } catch (e) {
+            reject(e);
         }
     })
 }
@@ -108,4 +135,5 @@ module.exports = {
     createSpecialtyService: createSpecialtyService,
     getSpecialtyForHomePageService: getSpecialtyForHomePageService,
     getSpecialtyByIdService: getSpecialtyByIdService,
+    getSpecialtyAndProvinceForMedicalFacilityManagePageService: getSpecialtyAndProvinceForMedicalFacilityManagePageService,
 }
