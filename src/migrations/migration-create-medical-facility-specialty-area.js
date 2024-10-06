@@ -3,7 +3,7 @@
 module.exports = {
     async up(queryInterface, Sequelize) {
         // tên bảng viết hoa hay thường thì mysql tự chuyển thành thường
-        await queryInterface.createTable('Medical_facility_specialty_area_s', {
+        await queryInterface.createTable('MedicalFacilitySpecialtyAreas', {
             id: {
                 allowNull: false,
                 autoIncrement: true,
@@ -12,7 +12,13 @@ module.exports = {
             },
 
             medicalFacilityId: {
-                type: Sequelize.INTEGER
+                type: Sequelize.INTEGER,
+                allowNull: false,
+                references: {
+                    model: 'ComplexMedicalFacilities',
+                    key: 'id'
+                },
+                onDelete: 'CASCADE'  // Xóa dữ liệu nếu bản ghi ở bảng liên kết bị xóa
             },
             specialtyId: {
                 type: Sequelize.INTEGER
@@ -29,6 +35,6 @@ module.exports = {
         });
     },
     async down(queryInterface, Sequelize) {
-        await queryInterface.dropTable('Medical_facility_specialty_area_s');
+        await queryInterface.dropTable('MedicalFacilitySpecialtyAreas');
     }
 };
