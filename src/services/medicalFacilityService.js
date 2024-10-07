@@ -79,7 +79,46 @@ let createMedicalFacilityService = (inputData) => {
     })
 }
 
+let getBriefInfoOfAllMedicalFacilityService = (inputId) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let medicalFacilityRes = {};
+            if (inputId === 'ALL') {
+                medicalFacilityRes = db.ComplexMedicalFacility.findAll({
+                    include: [
+                        {
+                            model: db.MedicalFacilitySpecialtyArea, as: 'medicalFacilitySpecialtyData',
+                            attributes: ['medicalFacilityId', 'specialtyId']
+                        },
+                    ],
+                    attributes: {
+                        exclude: ['htmlDescription', 'markdownDescription', 'htmlEquipment', 'markdownEquipment', 'image', 'createdAt', 'updatedAt']
+                    }
+                })
+            }
+            if (inputId && inputId !== 'ALL') {
+                medicalFacilityRes = db.ComplexMedicalFacility.findAll({
+                    where: { id: inputId },
+                    include: [
+                        {
+                            model: db.MedicalFacilitySpecialtyArea, as: 'medicalFacilitySpecialtyData',
+                            attributes: ['medicalFacilityId', 'specialtyId']
+                        },
+                    ],
+                    attributes: {
+                        exclude: ['htmlDescription', 'markdownDescription', 'htmlEquipment', 'markdownEquipment', 'image', 'createdAt', 'updatedAt']
+                    }
+                })
+            }
+
+            resolve(medicalFacilityRes);
+        } catch (e) {
+            reject(e);
+        }
+    })
+}
 
 module.exports = {
     createMedicalFacilityService: createMedicalFacilityService,
+    getBriefInfoOfAllMedicalFacilityService: getBriefInfoOfAllMedicalFacilityService,
 }

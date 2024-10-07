@@ -13,6 +13,35 @@ let createMedicalFacility = async (req, res) => {
     }
 }
 
+let getBriefInfoOfAllMedicalFacility = async (req, res) => {
+    try {
+        let id = req.query.id;
+        if (!id) {
+            return res.status(200).json({
+                errCode: 1,
+                errMessage: 'Missing required parameters!',
+                medicalFacility: []
+            });
+        } else {
+            let infor = await medicalFacilityService.getBriefInfoOfAllMedicalFacilityService(id);
+            return res.status(200).json(
+                {
+                    errCode: 0,
+                    errMessage: 'Get brief info of medical facility successfully!',
+                    infor
+                }
+            );
+        }
+    } catch (e) {
+        console.log(e);
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: "Get brief info of medical facility fail from server!",
+        })
+    }
+}
+
 module.exports = {
     createMedicalFacility: createMedicalFacility,
+    getBriefInfoOfAllMedicalFacility: getBriefInfoOfAllMedicalFacility,
 }
