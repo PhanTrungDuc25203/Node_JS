@@ -82,6 +82,7 @@ let createMedicalFacilityService = (inputData) => {
 let getBriefInfoOfAllMedicalFacilityService = (inputId) => {
     return new Promise(async (resolve, reject) => {
         try {
+            console.log("CHeck input Id: ", inputId);
             let medicalFacilityRes = {};
             if (inputId === 'ALL') {
                 medicalFacilityRes = db.ComplexMedicalFacility.findAll({
@@ -96,7 +97,20 @@ let getBriefInfoOfAllMedicalFacilityService = (inputId) => {
                     }
                 })
             }
-            if (inputId && inputId !== 'ALL') {
+            if (inputId === 'ALLANDIMAGE') {
+                medicalFacilityRes = db.ComplexMedicalFacility.findAll({
+                    include: [
+                        {
+                            model: db.MedicalFacilitySpecialtyArea, as: 'medicalFacilitySpecialtyData',
+                            attributes: ['medicalFacilityId', 'specialtyId']
+                        },
+                    ],
+                    attributes: {
+                        exclude: ['htmlDescription', 'markdownDescription', 'htmlEquipment', 'markdownEquipment', 'createdAt', 'updatedAt']
+                    }
+                })
+            }
+            if (inputId && inputId !== 'ALL' && inputId !== 'ALLANDIMAGE') {
                 medicalFacilityRes = db.ComplexMedicalFacility.findAll({
                     where: { id: inputId },
                     include: [

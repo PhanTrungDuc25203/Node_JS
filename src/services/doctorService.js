@@ -211,6 +211,15 @@ let getParticularInforForDoctorPage = (inputDoctorId) => {
                                 { model: db.Specialty, as: 'belongToSpecialty', attributes: ['name'] }
                             ]
                         },
+                        {
+                            model: db.Doctor_specialty_medicalFacility,
+                            attributes: {
+                                exclude: ['id', 'createdAt', 'updatedAt']
+                            },
+                            include: [
+                                { model: db.ComplexMedicalFacility, attributes: ['id', 'name'] }
+                            ]
+                        }
 
                     ],
                     raw: false,

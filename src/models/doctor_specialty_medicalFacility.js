@@ -10,8 +10,9 @@ module.exports = (sequelize, DataTypes) => {
          * The `models/index` file will call this method automatically.
          */
         static associate(models) {
-            // define association here
-            //nơi định nghĩa các mối quan hệ, 1-n,1-1,n-1,n-n?...
+            Doctor_specialty_medicalFacility.belongsTo(models.User, { foreignKey: 'doctorId' });
+            Doctor_specialty_medicalFacility.belongsTo(models.Specialty, { foreignKey: 'specialtyId' });
+            Doctor_specialty_medicalFacility.belongsTo(models.ComplexMedicalFacility, { foreignKey: 'medicalFacilityId' });
         }
     }
     Doctor_specialty_medicalFacility.init({
