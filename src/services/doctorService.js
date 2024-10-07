@@ -57,7 +57,7 @@ let getAllDoctorsForDoctorArticlePage = () => {
 
 let checkRequiredField = (inputData) => {
     let arrFields = ['doctorId', 'htmlContent', 'markdownContent', 'action', 'selectedPrice', 'selectedPaymentMethod',
-        'selectedProvince', 'clinicName', 'clinicAddress', 'note', 'specialtyId'];
+        'selectedProvince', 'clinicName', 'clinicAddress', 'note', 'specialtyId', 'selectedMedicalFacility'];
     let isValid = true;
     let element = '';
     for (let i = 0; i < arrFields.length; i++) {
@@ -135,6 +135,37 @@ let saveInforAndArticleOfADoctorService = (inputData) => {
                         specialtyId: inputData.specialtyId,
                         clinicId: inputData.clinicId,
                     })
+                }
+
+                if (inputData.selectedMedicalFacility) {
+                    if (inputData.action === 'CREATE') {
+                        // Tạo mới bản ghi
+                        await db.Doctor_specialty_medicalFacility.create({
+                            doctorId: inputData.doctorId,
+                            specialtyId: inputData.specialtyId,
+                            medicalFacilityId: inputData.selectedMedicalFacility,
+                        });
+                    } else if (inputData.action === 'EDIT') {
+                        // Tìm và cập nhật bản ghi
+                        let doctorMedicalFacility = await db.Doctor_specialty_medicalFacility.findOne({
+                            where: {
+                                doctorId: inputData.doctorId,
+                                specialtyId: inputData.specialtyId
+                            },
+                            raw: false,
+                        });
+                        if (doctorMedicalFacility) {
+                            doctorMedicalFacility.medicalFacilityId = inputData.selectedMedicalFacility;
+                            await doctorMedicalFacility.save();
+                        } else {
+                            // Nếu không tìm thấy, tạo mới bản ghi
+                            await db.Doctor_specialty_medicalFacility.create({
+                                doctorId: inputData.doctorId,
+                                specialtyId: inputData.specialtyId,
+                                medicalFacilityId: inputData.selectedMedicalFacility,
+                            });
+                        }
+                    }
                 }
 
                 resolve({
