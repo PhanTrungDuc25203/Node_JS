@@ -120,7 +120,7 @@ let getInfoOfMedicalFacilityService = (inputId) => {
                         },
                     ],
                     attributes: {
-                        exclude: ['htmlDescription', 'markdownDescription', 'htmlEquipment', 'markdownEquipment', 'image', 'createdAt', 'updatedAt']
+                        exclude: ['createdAt', 'updatedAt']
                     }
                 })
             }
