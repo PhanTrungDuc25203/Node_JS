@@ -70,7 +70,7 @@ let initWebRoutes = (app) => {
     //tạo thông tin cho một cơ sở y tế
     router.post('/api/create-medical-facility', medicalFacilityController.createMedicalFacility);
     //lấy thông tin trích dẫn của cơ sở y tế
-    router.get('/api/get-brief-info-of-all-medical-facility', medicalFacilityController.getBriefInfoOfAllMedicalFacility);
+    router.get('/api/get-info-of-medical-facility', medicalFacilityController.getInfoOfMedicalFacility);
 
     return app.use("/", router);
 }

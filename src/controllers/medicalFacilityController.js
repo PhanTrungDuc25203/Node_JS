@@ -13,7 +13,7 @@ let createMedicalFacility = async (req, res) => {
     }
 }
 
-let getBriefInfoOfAllMedicalFacility = async (req, res) => {
+let getInfoOfMedicalFacility = async (req, res) => {
     try {
         let id = req.query.id;
         if (!id) {
@@ -23,7 +23,7 @@ let getBriefInfoOfAllMedicalFacility = async (req, res) => {
                 medicalFacility: []
             });
         } else {
-            let infor = await medicalFacilityService.getBriefInfoOfAllMedicalFacilityService(id);
+            let infor = await medicalFacilityService.getInfoOfMedicalFacilityService(id);
             return res.status(200).json(
                 {
                     errCode: 0,
@@ -43,5 +43,5 @@ let getBriefInfoOfAllMedicalFacility = async (req, res) => {
 
 module.exports = {
     createMedicalFacility: createMedicalFacility,
-    getBriefInfoOfAllMedicalFacility: getBriefInfoOfAllMedicalFacility,
+    getInfoOfMedicalFacility: getInfoOfMedicalFacility,
 }

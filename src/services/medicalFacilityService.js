@@ -79,7 +79,7 @@ let createMedicalFacilityService = (inputData) => {
     })
 }
 
-let getBriefInfoOfAllMedicalFacilityService = (inputId) => {
+let getInfoOfMedicalFacilityService = (inputId) => {
     return new Promise(async (resolve, reject) => {
         try {
             console.log("CHeck input Id: ", inputId);
@@ -134,5 +134,5 @@ let getBriefInfoOfAllMedicalFacilityService = (inputId) => {
 
 module.exports = {
     createMedicalFacilityService: createMedicalFacilityService,
-    getBriefInfoOfAllMedicalFacilityService: getBriefInfoOfAllMedicalFacilityService,
+    getInfoOfMedicalFacilityService: getInfoOfMedicalFacilityService,
 }
