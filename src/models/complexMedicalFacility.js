@@ -11,7 +11,8 @@ module.exports = (sequelize, DataTypes) => {
          */
         static associate(models) {
             ComplexMedicalFacility.hasMany(models.MedicalFacilitySpecialtyArea, { foreignKey: 'medicalFacilityId', as: 'medicalFacilitySpecialtyData' })
-            ComplexMedicalFacility.hasOne(models.Doctor_specialty_medicalFacility, { foreignKey: 'medicalFacilityId' })
+            ComplexMedicalFacility.hasMany(models.Doctor_specialty_medicalFacility, { foreignKey: 'medicalFacilityId', as: 'medicalFacilityDoctorAndSpecialty' })
+            ComplexMedicalFacility.belongsTo(models.Allcode, { foreignKey: 'provinceId', targetKey: 'keyMap', as: 'provinceTypeDataForFacility' })
         }
     }
     ComplexMedicalFacility.init({

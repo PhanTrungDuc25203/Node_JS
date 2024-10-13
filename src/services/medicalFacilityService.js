@@ -118,6 +118,14 @@ let getInfoOfMedicalFacilityService = (inputId) => {
                             model: db.MedicalFacilitySpecialtyArea, as: 'medicalFacilitySpecialtyData',
                             attributes: ['medicalFacilityId', 'specialtyId']
                         },
+                        {
+                            model: db.Allcode, as: 'provinceTypeDataForFacility',
+                            attributes: ['value_Eng', 'value_Vie']
+                        },
+                        {
+                            model: db.Doctor_specialty_medicalFacility, as: 'medicalFacilityDoctorAndSpecialty',
+                            attributes: ['specialtyId', 'doctorId'],
+                        }
                     ],
                     attributes: {
                         exclude: ['createdAt', 'updatedAt']
