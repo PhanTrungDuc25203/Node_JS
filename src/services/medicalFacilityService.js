@@ -116,7 +116,13 @@ let getInfoOfMedicalFacilityService = (inputId) => {
                     include: [
                         {
                             model: db.MedicalFacilitySpecialtyArea, as: 'medicalFacilitySpecialtyData',
-                            attributes: ['medicalFacilityId', 'specialtyId']
+                            attributes: ['medicalFacilityId', 'specialtyId'],
+                            include: [
+                                {
+                                    model: db.Specialty, as: 'medicalFacilityHaveSpecialty',
+                                    attributes: ['name'],
+                                }
+                            ]
                         },
                         {
                             model: db.Allcode, as: 'provinceTypeDataForFacility',

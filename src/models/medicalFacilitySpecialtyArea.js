@@ -11,6 +11,7 @@ module.exports = (sequelize, DataTypes) => {
          */
         static associate(models) {
             MedicalFacilitySpecialtyArea.belongsTo(models.ComplexMedicalFacility, { foreignKey: 'medicalFacilityId', targetKey: 'id', as: 'medicalFacilitySpecialtyData' })
+            MedicalFacilitySpecialtyArea.belongsTo(models.Specialty, { foreignKey: 'specialtyId', targetKey: 'id', as: 'medicalFacilityHaveSpecialty' })
         }
     }
     MedicalFacilitySpecialtyArea.init({
