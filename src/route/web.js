@@ -71,6 +71,8 @@ let initWebRoutes = (app) => {
     router.post('/api/create-medical-facility', medicalFacilityController.createMedicalFacility);
     //lấy thông tin trích dẫn của cơ sở y tế
     router.get('/api/get-info-of-medical-facility', medicalFacilityController.getInfoOfMedicalFacility);
+    //tạo mới một gói khám cho một cơ sở y tế
+    router.post('/api/create-exam-package', medicalFacilityController.createExamPackage);
 
     return app.use("/", router);
 }

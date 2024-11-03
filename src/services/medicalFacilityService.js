@@ -146,7 +146,73 @@ let getInfoOfMedicalFacilityService = (inputId) => {
     })
 }
 
+let checkRequiredFieldForAPackage = (inputData) => {
+    let arrFields = [
+        'name',
+        'selectedSpecialty',
+        'selectedPrice',
+        'selectedMedicalFacility',
+        'htmlDescription',
+        'markdownDescription',
+        'htmlCategory',
+        'markdownCategory',
+        'image',
+    ];
+    let isValid = true;
+    let element = '';
+    for (let i = 0; i < arrFields.length; i++) {
+        if (!inputData[arrFields[i]]) {
+            isValid = false;
+            element = arrFields[i];
+            break;
+        }
+    }
+    return {
+        isValid: isValid,
+        element: element,
+    }
+}
+
+let createExamPackageService = (inputData) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let checkObj = checkRequiredFieldForAPackage(inputData);
+            if (checkObj.isValid === false) {
+                resolve({
+                    errCode: 1,
+                    errMessage: `Missing parameter(s): required information for a Exam package!`
+                });
+            } else {
+                try {
+                    console.log("Check data: ", inputData.name, inputData.selectedSpecialty, inputData.selectedPrice, inputData.selectedMedicalFacility);
+                    await db.ExamPackage_specialty_medicalFacility.create({
+                        name: inputData.name,
+                        specialtyId: inputData.selectedSpecialty,
+                        priceId: inputData.selectedPrice,
+                        medicalFacilityId: inputData.selectedMedicalFacility,
+                        htmlDescription: inputData.htmlDescription,
+                        markdownDescription: inputData.markdownDescription,
+                        htmlCategory: inputData.htmlCategory,
+                        markdownCategory: inputData.markdownCategory,
+                        image: inputData.image,
+                    })
+
+                    resolve({
+                        errCode: 0,
+                        errMessage: `Create a exam package successfully!`
+                    });
+                } catch (error) {
+                    reject(error);
+                }
+            }
+        } catch (e) {
+            reject(e);
+        }
+    })
+}
+
 module.exports = {
     createMedicalFacilityService: createMedicalFacilityService,
     getInfoOfMedicalFacilityService: getInfoOfMedicalFacilityService,
+    createExamPackageService: createExamPackageService,
 }
