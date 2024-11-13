@@ -12,6 +12,7 @@ module.exports = (sequelize, DataTypes) => {
         static associate(models) {
             // define association here
             //nơi định nghĩa các mối quan hệ, 1-n,1-1,n-1,n-n?...
+            ExamPackage_specialty_medicalFacility.belongsTo(models.ComplexMedicalFacility, { foreignKey: 'medicalFacilityId', targetKey: 'id', as: 'medicalFacilityPackage' })
         }
     }
     ExamPackage_specialty_medicalFacility.init({

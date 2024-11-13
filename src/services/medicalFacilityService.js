@@ -135,6 +135,10 @@ let getInfoOfMedicalFacilityService = (inputId) => {
                         {
                             model: db.Doctor_specialty_medicalFacility, as: 'medicalFacilityDoctorAndSpecialty',
                             attributes: ['specialtyId', 'doctorId'],
+                        },
+                        {
+                            model: db.ExamPackage_specialty_medicalFacility, as: 'medicalFacilityPackage',
+                            attributes: ['id', 'name'],
                         }
                     ],
                     attributes: {
