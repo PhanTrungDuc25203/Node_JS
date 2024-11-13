@@ -73,6 +73,10 @@ let initWebRoutes = (app) => {
     router.get('/api/get-info-of-medical-facility', medicalFacilityController.getInfoOfMedicalFacility);
     //tạo mới một gói khám cho một cơ sở y tế
     router.post('/api/create-exam-package', medicalFacilityController.createExamPackage);
+    //lấy thông tin tất cả các Gói khám
+    router.get('/api/get-all-exam-package', medicalFacilityController.getAllExamPackage);
+    //tạo lịch khám cho gói khám
+    router.post('/api/bulk-create-timeframes-for-exam-package-schedule', medicalFacilityController.createTimeframesForExamPackageSchedule);
 
     return app.use("/", router);
 }
