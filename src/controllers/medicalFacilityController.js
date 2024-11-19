@@ -86,10 +86,25 @@ let getAllExamPackage = async (req, res) => {
     }
 }
 
+let getPackageScheduleByDate = async (req, res) => {
+    try {
+        console.log("Check parameter: ", req.query.packageId, req.query.date);
+        let infor = await medicalFacilityService.getPackageScheduleByDateService(req.query.packageId, req.query.date);
+        return res.status(200).json(infor);
+    } catch (e) {
+        console.log(e);
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: 'Get schedule by date for a package error from server!',
+        })
+    }
+}
+
 module.exports = {
     createMedicalFacility: createMedicalFacility,
     getInfoOfMedicalFacility: getInfoOfMedicalFacility,
     createExamPackage: createExamPackage,
     createTimeframesForExamPackageSchedule: createTimeframesForExamPackageSchedule,
     getAllExamPackage: getAllExamPackage,
+    getPackageScheduleByDate: getPackageScheduleByDate,
 }
