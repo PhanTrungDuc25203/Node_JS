@@ -78,7 +78,7 @@ let initWebRoutes = (app) => {
     //tạo lịch khám cho gói khám
     router.post('/api/bulk-create-timeframes-for-exam-package-schedule', medicalFacilityController.createTimeframesForExamPackageSchedule);
     //lấy các khung giờ khám của một gói khám
-    router.post('/api/get-package-schedule-by-date', medicalFacilityController.getPackageScheduleByDate);
+    router.get('/api/get-package-schedule-by-date', medicalFacilityController.getPackageScheduleByDate);
     return app.use("/", router);
 }
 module.exports = initWebRoutes;

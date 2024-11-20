@@ -285,7 +285,10 @@ let getAllExamPackageService = (inputId) => {
                 packageRes = db.ExamPackage_specialty_medicalFacility.findAll({
                     attributes: {
                         exclude: ['htmlDescription', 'markdownDescription', 'htmlCategory', 'markdownCategory', 'image', 'createdAt', 'updatedAt']
-                    }
+                    },
+                    include: [
+                        { model: db.Allcode, as: 'priceDataForPackage', attributes: ['value_Eng', 'value_Vie'] },
+                    ],
                 })
             }
             if (inputId === 'ALLANDIMAGE') {
@@ -300,12 +303,58 @@ let getAllExamPackageService = (inputId) => {
                     where: { id: inputId },
                     attributes: {
                         exclude: ['createdAt', 'updatedAt']
-                    }
+                    },
+                    include: [
+                        { model: db.Allcode, as: 'priceDataForPackage', attributes: ['value_Eng', 'value_Vie'] },
+                    ],
                 })
             }
             resolve(packageRes);
         } catch (e) {
             reject(e);
+        }
+    })
+}
+
+let getPackageScheduleByDateService = (packageId, date) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!packageId || !date) {
+                resolve({
+                    errCode: 1,
+                    errMessage: 'Missing required parameter: packageId or date!',
+                })
+            } else {
+                // let formattedDate = moment(Number(date)).format('YYYY-MM-DD 00:00:00');
+                // console.log("Check formatted date: ", date, "type of date: ", typeof date);
+                let numberDate = Number(date);
+                // console.log("Check number date (number): ", numberDate, "type of date: ", typeof numberDate);
+                // console.log("Check formatted date (number): ", formattedDate, "type of date: ", typeof formattedDate);
+                let scheduleData = await db.ExamPackageSchedule.findAll({
+                    where: {
+                        examPackageId: packageId,
+                        date: numberDate,
+                    },
+                    include: [
+                        { model: db.Allcode, as: 'timeTypeDataForPackage', attributes: ['value_Eng', 'value_Vie'] },
+                    ],
+                    raw: false,
+                    nest: true,
+                });
+
+                // console.log("Check schedule data: ", scheduleData);
+                if (!scheduleData) {
+                    scheduleData = ["no schedule"];
+                }
+
+                resolve({
+                    errCode: 0,
+                    errMessage: "Get exam package schedule successfully!",
+                    data: scheduleData,
+                })
+            }
+        } catch (e) {
+
         }
     })
 }
@@ -316,4 +365,5 @@ module.exports = {
     createExamPackageService: createExamPackageService,
     bulkCreateTimeframesForExamPackageScheduleService: bulkCreateTimeframesForExamPackageScheduleService,
     getAllExamPackageService: getAllExamPackageService,
+    getPackageScheduleByDateService: getPackageScheduleByDateService,
 }

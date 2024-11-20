@@ -12,7 +12,7 @@ module.exports = (sequelize, DataTypes) => {
         static associate(models) {
             // define association here
             //nơi định nghĩa các mối quan hệ, 1-n,1-1,n-1,n-n?...
-
+            ExamPackageSchedule.belongsTo(models.Allcode, { foreignKey: 'timeType', targetKey: 'keyMap', as: 'timeTypeDataForPackage' })
         }
     }
     ExamPackageSchedule.init({
