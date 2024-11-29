@@ -114,7 +114,21 @@ let getInfoOfMedicalFacilityService = (inputId) => {
                     }
                 })
             }
-            if (inputId && inputId !== 'ALL' && inputId !== 'ALLANDIMAGE') {
+            if (inputId === 'ALLANDIMAGEANDLIMITED') {
+                medicalFacilityRes = db.ComplexMedicalFacility.findAll({
+                    include: [
+                        {
+                            model: db.MedicalFacilitySpecialtyArea, as: 'medicalFacilitySpecialtyData',
+                            attributes: ['medicalFacilityId', 'specialtyId']
+                        },
+                    ],
+                    attributes: {
+                        exclude: ['htmlDescription', 'markdownDescription', 'htmlEquipment', 'markdownEquipment', 'createdAt', 'updatedAt']
+                    },
+                    limit: 20 // Giới hạn số lượng bản ghi trả về là 20
+                })
+            }
+            if (inputId && inputId !== 'ALL' && inputId !== 'ALLANDIMAGE' && inputId !== 'ALLANDIMAGEANDLIMITED') {
                 medicalFacilityRes = db.ComplexMedicalFacility.findAll({
                     where: { id: inputId },
                     include: [
