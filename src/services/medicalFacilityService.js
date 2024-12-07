@@ -114,6 +114,19 @@ let getInfoOfMedicalFacilityService = (inputId) => {
                     }
                 })
             }
+            if (inputId === 'ALLANDIMAGEBUTSHORT') {
+                medicalFacilityRes = db.ComplexMedicalFacility.findAll({
+                    include: [
+                        {
+                            model: db.MedicalFacilitySpecialtyArea, as: 'medicalFacilitySpecialtyData',
+                            attributes: ['medicalFacilityId', 'specialtyId']
+                        },
+                    ],
+                    attributes: {
+                        exclude: ['htmlDescription', 'markdownDescription', 'htmlEquipment', 'markdownEquipment', 'createdAt', 'updatedAt']
+                    }
+                })
+            }
             if (inputId === 'ALLANDIMAGEANDLIMITED') {
                 medicalFacilityRes = db.ComplexMedicalFacility.findAll({
                     include: [
@@ -128,7 +141,7 @@ let getInfoOfMedicalFacilityService = (inputId) => {
                     limit: 20 // Giới hạn số lượng bản ghi trả về là 20
                 })
             }
-            if (inputId && inputId !== 'ALL' && inputId !== 'ALLANDIMAGE' && inputId !== 'ALLANDIMAGEANDLIMITED') {
+            if (inputId && inputId !== 'ALL' && inputId !== 'ALLANDIMAGE' && inputId !== 'ALLANDIMAGEANDLIMITED' && inputId !== 'ALLANDIMAGEBUTSHORT') {
                 medicalFacilityRes = db.ComplexMedicalFacility.findAll({
                     where: { id: inputId },
                     include: [
