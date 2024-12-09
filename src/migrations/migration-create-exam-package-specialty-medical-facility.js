@@ -3,7 +3,7 @@
 module.exports = {
     async up(queryInterface, Sequelize) {
         // tên bảng viết hoa hay thường thì mysql tự chuyển thành thường
-        await queryInterface.createTable('Exampackage_specialty_medicalfacilities', {
+        await queryInterface.createTable('ExamPackage_specialty_medicalFacilities', {
             id: {
                 allowNull: false,
                 autoIncrement: true,
@@ -54,6 +54,6 @@ module.exports = {
         });
     },
     async down(queryInterface, Sequelize) {
-        await queryInterface.dropTable('Exampackage_specialty_medicalfacilities');
+        await queryInterface.dropTable('ExamPackage_specialty_medicalFacilities');
     }
 };
