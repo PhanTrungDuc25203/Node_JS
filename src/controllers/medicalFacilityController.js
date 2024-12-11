@@ -73,7 +73,7 @@ let getAllExamPackage = async (req, res) => {
         return res.status(200).json(
             {
                 errCode: 0,
-                errMessage: 'Get brief info of medical facility successfully!',
+                errMessage: 'Get info of exam package successfully!',
                 infor
             }
         );
@@ -100,6 +100,19 @@ let getPackageScheduleByDate = async (req, res) => {
     }
 }
 
+let patientInforWhenBookingExamPackage = async (req, res) => {
+    try {
+        let infor = await medicalFacilityService.patientInforWhenBookingExamPackageService(req.body);
+        return res.status(200).json(infor);
+    } catch (e) {
+        console.log(e);
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: 'Save booking form error from server!',
+        })
+    }
+}
+
 module.exports = {
     createMedicalFacility: createMedicalFacility,
     getInfoOfMedicalFacility: getInfoOfMedicalFacility,
@@ -107,4 +120,5 @@ module.exports = {
     createTimeframesForExamPackageSchedule: createTimeframesForExamPackageSchedule,
     getAllExamPackage: getAllExamPackage,
     getPackageScheduleByDate: getPackageScheduleByDate,
+    patientInforWhenBookingExamPackage: patientInforWhenBookingExamPackage,
 }

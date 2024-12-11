@@ -386,6 +386,111 @@ let getPackageScheduleByDateService = (packageId, date) => {
     })
 }
 
+let buildUrlConfirmMedicalRecord = (doctorId, token) => {
+    let result = `${process.env.URL_REACT_SERVER}/confirm-booking?token=${token}&doctorId=${doctorId}`;
+    return result;
+}
+
+let patientInforWhenBookingExamPackageService = (data) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!data.email || !data.packageId || !data.timeType || !data.date ||
+                !data.fullname || !data.appointmentMoment || !data.phoneNumber
+            ) {
+                resolve({
+                    errCode: 1,
+                    errMessage: `Missing parameter(s)!`,
+                })
+            } else {
+                let packageInfor = await db.ExamPackage_specialty_medicalFacility.findOne({
+                    where: { id: data.packageId },
+                    attributes: {
+                        exclude: ['id', 'htmlDescription', 'markdownDescription', 'htmlCategory', 'markdownCategory', 'image']
+                    },
+                    include: [
+                        { model: db.ComplexMedicalFacility, as: 'medicalFacilityPackage', attributes: ['name'] },
+                    ],
+                    raw: false,
+                })
+
+                let token = uuidv4(); // ⇨ '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d'
+
+                await sendEmailService.sendAEmail({
+                    receiverEmail: data.email,
+                    patientName: data.fullname,
+                    time: data.appointmentMoment,
+                    doctorName: packageInfor.name,
+                    clinicName: '',
+                    clinicAddress: packageInfor.medicalFacilityPackage.name,
+                    language: data.language,
+                    redirectLink: buildUrlConfirmMedicalRecord(data.packageId, token),
+                });
+
+                //upsert data
+                let fullName = data.fullname.trim();  // loại bỏ khoảng trắng thừa nếu có
+                let lastSpaceIndex = fullName.lastIndexOf(' ');
+
+                let firstName = lastSpaceIndex === -1 ? fullName : fullName.slice(lastSpaceIndex + 1);
+                let lastName = lastSpaceIndex === -1 ? '' : fullName.slice(0, lastSpaceIndex);
+
+                let patient = await db.User.findOrCreate({
+                    where: { email: data.email },
+                    defaults: {
+                        email: data.email,
+                        lastName: lastName,
+                        firstName: firstName,
+                        phoneNumber: data.phoneNumber,
+                        address: data.address,
+                        gender: data.selectedGender,
+                        roleId: 'R3',
+                    }
+                });
+
+                // let patient = await db.User.findOrCreate({
+                //     where: { email: data.email },
+                //     defaults: {
+                //         email: data.email,
+                //         lastName: data.fullname,
+                //         phoneNumber: data.phoneNumber,
+                //         address: data.address,
+                //         gender: data.selectedGender,
+                //         roleId: 'R3',
+                //     }
+                // });
+
+                //create a booking records
+                // if (patient && patient[0]) {
+                //     await db.Booking.findOrCreate({
+                //         where: {//khi khác S3 thì không lưu bản ghi mới: db.Sequelize.Op.ne là not equal = ne
+                //             patientId: patient[0].id, doctorId: data.doctorId, statusId: { [db.Sequelize.Op.ne]: 'S3' }
+                //         },
+                //         defaults: {
+                //             statusId: 'S1', //hardcode
+                //             doctorId: data.doctorId,
+                //             patientId: patient[0].id,
+                //             date: data.date,
+                //             timeType: data.timeType,
+                //             patientPhoneNumber: data.phoneNumber,
+                //             patientBirthday: data.birthday,
+                //             patientAddress: data.address,
+                //             patientGender: data.selectedGender,
+                //             token: token,
+                //         }
+                //     })
+                // }
+
+                resolve({
+                    errCode: 0,
+                    errMessage: `Save patient's information successfully!`,
+                    // data: patient,
+                });
+            }
+        } catch (e) {
+            reject(e);
+        }
+    })
+}
+
 module.exports = {
     createMedicalFacilityService: createMedicalFacilityService,
     getInfoOfMedicalFacilityService: getInfoOfMedicalFacilityService,
@@ -393,4 +498,5 @@ module.exports = {
     bulkCreateTimeframesForExamPackageScheduleService: bulkCreateTimeframesForExamPackageScheduleService,
     getAllExamPackageService: getAllExamPackageService,
     getPackageScheduleByDateService: getPackageScheduleByDateService,
+    patientInforWhenBookingExamPackageService: patientInforWhenBookingExamPackageService,
 }
