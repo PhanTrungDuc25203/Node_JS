@@ -11,6 +11,16 @@ let searchWithFallback = async (
   include = [],
   baseWhere = {}
 ) => {
+  // Thêm logic tính priority (ưu tiên theo trường)
+  let priorityCase = `(CASE 
+    ${fields
+      .map((field, idx) => {
+        return `WHEN ${field} LIKE '%${searchterm}%' THEN ${idx + 1}`;
+      })
+      .join(" ")}
+    ELSE ${fields.length + 1}
+  END)`;
+
   // 1. Exact search (LIKE %...%)
   let result = await model.findAll({
     where: {
@@ -20,6 +30,7 @@ let searchWithFallback = async (
       })),
     },
     include,
+    order: [[Sequelize.literal(priorityCase), "ASC"]],
   });
 
   if (result.length > 0) {
@@ -39,7 +50,6 @@ let searchWithFallback = async (
     },
     include,
   });
-
   if (result.length > 0) {
     return { tag: "resemble", data: result };
   }
@@ -54,7 +64,6 @@ let searchWithFallback = async (
     },
     include,
   });
-
   if (result.length > 0) {
     return { tag: "resemble", data: result };
   }
