@@ -93,13 +93,15 @@ let searchComplexFacility = (searchterm) =>
   ]);
 
 let searchDoctor = async (searchterm) => {
-  // 1) Tìm trên User (ưu tiên)
+  // Include Doctor_infor khi tìm User
   let includeDoctorInfor = {
     model: db.Doctor_infor,
     required: false,
   };
+
   let userBaseWhere = { roleId: "R2" };
 
+  // 1) Search ở User
   let userSearch = await searchWithFallback(
     db.User,
     searchterm,
@@ -109,14 +111,22 @@ let searchDoctor = async (searchterm) => {
   );
 
   if (userSearch.tag !== "none") {
-    return userSearch;
+    // Chuẩn hóa dữ liệu => wrap lại thành { User: item }
+    return {
+      tag: userSearch.tag,
+      data: userSearch.data.map((u) => ({
+        id: u.id, // giữ id để render key
+        User: u, // đặt User = chính object User
+        Doctor_infor: u.Doctor_infor || null,
+      })),
+    };
   }
 
-  // 2) Nếu không tìm thấy ở User => tìm trong Doctor_infor
+  // 2) Search ở Doctor_infor (include User)
   let includeUser = {
     model: db.User,
     where: { roleId: "R2" },
-    attributes: ["firstName", "lastName", "email"],
+    attributes: ["id", "firstName", "lastName", "email", "image"],
     required: false,
   };
 
@@ -127,7 +137,18 @@ let searchDoctor = async (searchterm) => {
     [includeUser]
   );
 
-  return doctorSearch;
+  if (doctorSearch.tag !== "none") {
+    return {
+      tag: doctorSearch.tag,
+      data: doctorSearch.data.map((d) => ({
+        id: d.id,
+        User: d.User, // luôn có User vì đã include
+        Doctor_infor: d,
+      })),
+    };
+  }
+
+  return { tag: "none", data: [] };
 };
 
 // -------------------------
