@@ -9,25 +9,52 @@ let searchWithFallback = async (
   searchterm,
   fields,
   include = [],
-  baseWhere = {}
+  baseWhere = {},
+  options = {} // { useFullName: boolean, fullNameCols: ['firstName','lastName'] }
 ) => {
-  // Thêm logic tính priority (ưu tiên theo trường)
-  let priorityCase = `(CASE 
-    ${fields
-      .map((field, idx) => {
-        return `WHEN ${field} LIKE '%${searchterm}%' THEN ${idx + 1}`;
-      })
-      .join(" ")}
-    ELSE ${fields.length + 1}
-  END)`;
+  const { useFullName = false, fullNameCols = ["firstName", "lastName"] } =
+    options;
 
-  // 1. Exact search (LIKE %...%)
+  // build priority CASE - chỉ thêm CONCAT khi useFullName = true
+  const caseParts = fields.map((field, idx) => {
+    return `WHEN ${field} LIKE '%${searchterm}%' THEN ${idx + 1}`;
+  });
+
+  if (useFullName && fullNameCols.length >= 2) {
+    // CONCAT(firstName, ' ', lastName)
+    caseParts.push(
+      `WHEN CONCAT(${fullNameCols[1]}, ' ', ${fullNameCols[0]}) LIKE '%${searchterm}%' THEN 1`
+    );
+  }
+
+  const elseVal = fields.length + (useFullName ? 2 : 1);
+  const priorityCase = `(CASE ${caseParts.join(" ")} ELSE ${elseVal} END)`;
+
+  // 1) Exact search (LIKE %...%)
+  const whereOr_exact = [
+    ...fields.map((field) => ({
+      [field]: { [Op.like]: `%${searchterm}%` },
+    })),
+  ];
+
+  if (useFullName && fullNameCols.length >= 2) {
+    whereOr_exact.push(
+      Sequelize.where(
+        Sequelize.fn(
+          "concat",
+          Sequelize.col(fullNameCols[1]),
+          " ",
+          Sequelize.col(fullNameCols[0])
+        ),
+        { [Op.like]: `%${searchterm}%` }
+      )
+    );
+  }
+
   let result = await model.findAll({
     where: {
       ...baseWhere,
-      [Op.or]: fields.map((field) => ({
-        [field]: { [Op.like]: `%${searchterm}%` },
-      })),
+      [Op.or]: whereOr_exact,
     },
     include,
     order: [[Sequelize.literal(priorityCase), "ASC"]],
@@ -37,33 +64,74 @@ let searchWithFallback = async (
     return { tag: "exact", data: result };
   }
 
-  // 2. Resemble: SOUNDEX
+  // 2) Resemble: SOUNDEX (chỉ thêm fullName SOUNDEX khi được bật)
+  const whereOr_soundex = [
+    ...fields.map((field) =>
+      Sequelize.where(
+        Sequelize.fn("SOUNDEX", Sequelize.col(field)),
+        Sequelize.fn("SOUNDEX", searchterm)
+      )
+    ),
+  ];
+
+  if (useFullName && fullNameCols.length >= 2) {
+    whereOr_soundex.push(
+      Sequelize.where(
+        Sequelize.fn(
+          "SOUNDEX",
+          Sequelize.fn(
+            "concat",
+            Sequelize.col(fullNameCols[0]),
+            " ",
+            Sequelize.col(fullNameCols[1])
+          )
+        ),
+        Sequelize.fn("SOUNDEX", searchterm)
+      )
+    );
+  }
+
   result = await model.findAll({
     where: {
       ...baseWhere,
-      [Op.or]: fields.map((field) =>
-        Sequelize.where(
-          Sequelize.fn("SOUNDEX", Sequelize.col(field)),
-          Sequelize.fn("SOUNDEX", searchterm)
-        )
-      ),
+      [Op.or]: whereOr_soundex,
     },
     include,
   });
+
   if (result.length > 0) {
     return { tag: "resemble", data: result };
   }
 
-  // 3. Resemble: prefix (LIKE searchterm%)
+  // 3) Resemble: prefix (LIKE searchterm%)
+  const whereOr_prefix = [
+    ...fields.map((field) => ({
+      [field]: { [Op.like]: `${searchterm}%` },
+    })),
+  ];
+
+  if (useFullName && fullNameCols.length >= 2) {
+    whereOr_prefix.push(
+      Sequelize.where(
+        Sequelize.fn(
+          "concat",
+          Sequelize.col(fullNameCols[0]),
+          " ",
+          Sequelize.col(fullNameCols[1])
+        ),
+        { [Op.like]: `${searchterm}%` }
+      )
+    );
+  }
+
   result = await model.findAll({
     where: {
       ...baseWhere,
-      [Op.or]: fields.map((field) => ({
-        [field]: { [Op.like]: `${searchterm}%` },
-      })),
+      [Op.or]: whereOr_prefix,
     },
     include,
   });
+
   if (result.length > 0) {
     return { tag: "resemble", data: result };
   }
@@ -72,8 +140,7 @@ let searchWithFallback = async (
 };
 
 // -------------------------
-// Các hàm search cụ thể
-// -------------------------
+// Các hàm search cụ thể (giữ nguyên)
 let searchSpecialty = (searchterm) =>
   searchWithFallback(db.Specialty, searchterm, ["name", "markdownDescription"]);
 
@@ -92,6 +159,8 @@ let searchComplexFacility = (searchterm) =>
     "markdownEquipment",
   ]);
 
+// -------------------------
+// searchDoctor: gọi searchWithFallback cho User với useFullName = true
 let searchDoctor = async (searchterm) => {
   // Include Doctor_infor khi tìm User
   let includeDoctorInfor = {
@@ -101,13 +170,14 @@ let searchDoctor = async (searchterm) => {
 
   let userBaseWhere = { roleId: "R2" };
 
-  // 1) Search ở User
+  // 1) Search ở User (BẬT full name concat)
   let userSearch = await searchWithFallback(
     db.User,
     searchterm,
     ["firstName", "lastName", "email"],
     [includeDoctorInfor],
-    userBaseWhere
+    userBaseWhere,
+    { useFullName: true, fullNameCols: ["firstName", "lastName"] }
   );
 
   if (userSearch.tag !== "none") {
@@ -122,7 +192,7 @@ let searchDoctor = async (searchterm) => {
     };
   }
 
-  // 2) Search ở Doctor_infor (include User)
+  // 2) Search ở Doctor_infor (include User) - giữ nguyên (tìm theo clinic)
   let includeUser = {
     model: db.User,
     where: { roleId: "R2" },
