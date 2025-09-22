@@ -15,13 +15,11 @@ let searchWithFallback = async (
   const { useFullName = false, fullNameCols = ["firstName", "lastName"] } =
     options;
 
-  // build priority CASE - chỉ thêm CONCAT khi useFullName = true
   const caseParts = fields.map((field, idx) => {
     return `WHEN ${field} LIKE '%${searchterm}%' THEN ${idx + 1}`;
   });
 
   if (useFullName && fullNameCols.length >= 2) {
-    // CONCAT(firstName, ' ', lastName)
     caseParts.push(
       `WHEN CONCAT(${fullNameCols[1]}, ' ', ${fullNameCols[0]}) LIKE '%${searchterm}%' THEN 1`
     );
@@ -162,15 +160,13 @@ let searchComplexFacility = (searchterm) =>
 // -------------------------
 // searchDoctor: gọi searchWithFallback cho User với useFullName = true
 let searchDoctor = async (searchterm) => {
-  // include positionData từ Allcode
   let includePosition = {
     model: db.Allcode,
-    as: "positionData", // alias phải khớp với association User.belongsTo(Allcode)
+    as: "positionData",
     attributes: ["keyMap", "value_Eng", "value_Vie"],
     required: false,
   };
 
-  // include Doctor_specialty_medicalFacility + ComplexMedicalFacility
   let includeDSM = {
     model: db.Doctor_specialty_medicalFacility,
     attributes: {
@@ -183,7 +179,7 @@ let searchDoctor = async (searchterm) => {
         attributes: ["id", "name"],
       },
       {
-        model: db.Specialty, // không cần alias
+        model: db.Specialty,
         attributes: ["id", "name"],
       },
     ],
@@ -191,7 +187,6 @@ let searchDoctor = async (searchterm) => {
 
   let userBaseWhere = { roleId: "R2" };
 
-  // Search ở User
   let userSearch = await searchWithFallback(
     db.User,
     searchterm,
