@@ -162,58 +162,60 @@ let searchComplexFacility = (searchterm) =>
 // -------------------------
 // searchDoctor: gọi searchWithFallback cho User với useFullName = true
 let searchDoctor = async (searchterm) => {
-  // Include Doctor_infor khi tìm User
-  let includeDoctorInfor = {
-    model: db.Doctor_infor,
+  // include positionData từ Allcode
+  let includePosition = {
+    model: db.Allcode,
+    as: "positionData", // alias phải khớp với association User.belongsTo(Allcode)
+    attributes: ["keyMap", "value_Eng", "value_Vie"],
     required: false,
+  };
+
+  // include Doctor_specialty_medicalFacility + ComplexMedicalFacility
+  let includeDSM = {
+    model: db.Doctor_specialty_medicalFacility,
+    attributes: {
+      exclude: ["id", "createdAt", "updatedAt"],
+    },
+    include: [
+      {
+        model: db.ComplexMedicalFacility,
+        as: "medicalFacilityDoctorAndSpecialty",
+        attributes: ["id", "name"],
+      },
+      {
+        model: db.Specialty, // không cần alias
+        attributes: ["id", "name"],
+      },
+    ],
   };
 
   let userBaseWhere = { roleId: "R2" };
 
-  // 1) Search ở User (BẬT full name concat)
+  // Search ở User
   let userSearch = await searchWithFallback(
     db.User,
     searchterm,
     ["firstName", "lastName", "email"],
-    [includeDoctorInfor],
+    [includePosition, includeDSM], // thêm cả 2 include
     userBaseWhere,
     { useFullName: true, fullNameCols: ["firstName", "lastName"] }
   );
 
   if (userSearch.tag !== "none") {
-    // Chuẩn hóa dữ liệu => wrap lại thành { User: item }
     return {
       tag: userSearch.tag,
       data: userSearch.data.map((u) => ({
-        id: u.id, // giữ id để render key
-        User: u, // đặt User = chính object User
-        Doctor_infor: u.Doctor_infor || null,
-      })),
-    };
-  }
-
-  // 2) Search ở Doctor_infor (include User) - giữ nguyên (tìm theo clinic)
-  let includeUser = {
-    model: db.User,
-    where: { roleId: "R2" },
-    attributes: ["id", "firstName", "lastName", "email", "image"],
-    required: false,
-  };
-
-  let doctorSearch = await searchWithFallback(
-    db.Doctor_infor,
-    searchterm,
-    ["clinicAddress", "clinicName"],
-    [includeUser]
-  );
-
-  if (doctorSearch.tag !== "none") {
-    return {
-      tag: doctorSearch.tag,
-      data: doctorSearch.data.map((d) => ({
-        id: d.id,
-        User: d.User, // luôn có User vì đã include
-        Doctor_infor: d,
+        id: u.id,
+        User: {
+          id: u.id,
+          firstName: u.firstName,
+          lastName: u.lastName,
+          email: u.email,
+          image: u.image,
+          positionData: u.positionData || null,
+          Doctor_specialty_medicalFacility:
+            u.Doctor_specialty_medicalFacility || [],
+        },
       })),
     };
   }
