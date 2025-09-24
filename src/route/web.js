@@ -104,6 +104,11 @@ let initWebRoutes = (app) => {
     "/api/get-specialty-for-homepage",
     specialtyController.getSpecialtyForHomePage
   );
+  //lấy các remote specialties cho trang home
+  router.get(
+    "/api/get-remote-specialty-for-homepage",
+    specialtyController.getRemoteSpecialtyForHomePage
+  );
   //lấy một số trường của các specialties cho trang tạo cơ sở y tế (để đỡ nghẽn mạng)
   router.get(
     "/api/get-specialty-and-province-for-medical-facility-manage-page",
