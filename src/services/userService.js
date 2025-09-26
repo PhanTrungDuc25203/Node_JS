@@ -2,7 +2,7 @@ import db from "../models/index";
 //trong file này có phần so sánh password để kiểm tra người dùng
 //nên cần so sánh giá trị băm của password chứ không phải pass thuần
 //nên cần thư viện ở dưới
-import bcrypt from 'bcryptjs';
+import bcrypt from "bcryptjs";
 import moment from "moment";
 
 const salt = bcrypt.genSaltSync(10);
@@ -15,36 +15,32 @@ let hashUserPassword = (password) => {
         } catch (e) {
             reject(e);
         }
-    })
-}
+    });
+};
 
 let handleUserLogin = (email, password) => {
     return new Promise(async (resolve, reject) => {
         try {
-            let userData = {
-
-            }
+            let userData = {};
             let isExist = await checkUserEmail(email);
             if (isExist) {
                 //có tồn taị người dùng
                 //sau đó cần so sánh password xem có giống nhau không mới cho đăng nhập
                 let user = await db.User.findOne({
-                    attributes: ['email', 'roleId', 'password', 'firstName', 'lastName'],
+                    attributes: ["email", "roleId", "password", "firstName", "lastName"],
                     where: { email: email },
                     //chỉ lấy ra một số trường thuộc tính cần thiết của User
                     //không nên lấy hết vì lộ thông tin
                     //nhưng vì nếu bỏ pass thì ko check đc pass nên vẫn lấy:))
 
-
-                    //trả lại dữ liệu raw vì thế thì câu lệnh xóa một thuộc tính 
+                    //trả lại dữ liệu raw vì thế thì câu lệnh xóa một thuộc tính
                     //của đối tượng mới hoạt động
                     raw: true,
-
                 });
-                //tại sao ta vẫn cần phải check người dùng có tồn tại hay không một 
+                //tại sao ta vẫn cần phải check người dùng có tồn tại hay không một
                 //lần nữa tại đây?
-                //vì web là chương trình cần chứ ý tới phiên hoạt động, có thể khi người 
-                //dùng này gửi request rồi, chương trình đã chạy xong câu lệnh check thứ 
+                //vì web là chương trình cần chứ ý tới phiên hoạt động, có thể khi người
+                //dùng này gửi request rồi, chương trình đã chạy xong câu lệnh check thứ
                 //nhất bên trên rồi nhưng chưa kịp chạy câu lệnh check thứ 2 ngay sau đây
                 //nên người dùng sẽ bị từ chối, hơn nữa việc người dùng nhập email và pass
                 //thực sự có một khoảng thời gian trống lớn
@@ -53,7 +49,7 @@ let handleUserLogin = (email, password) => {
                     let check = await bcrypt.compareSync(password, user.password);
                     if (check) {
                         userData.errCode = 0;
-                        userData.errMessage = 'Login succesfully';
+                        userData.errMessage = "Login succesfully";
                         //vì giải thích ở trên nói vẫn lấy pass nên ở đây nên xóa thuộc tính pass
                         //của đối tượng user đi rồi mới trả về cho userData
 
@@ -62,7 +58,7 @@ let handleUserLogin = (email, password) => {
                         userData.user = user;
                     } else {
                         userData.errCode = 2;
-                        userData.errMessage = 'Wrong pasword';
+                        userData.errMessage = "Wrong pasword";
                     }
                 } else {
                     userData.errCode = 1;
@@ -76,8 +72,8 @@ let handleUserLogin = (email, password) => {
         } catch (e) {
             reject(e);
         }
-    })
-}
+    });
+};
 
 let checkUserEmail = (userEmail) => {
     return new Promise(async (resolve, reject) => {
@@ -85,9 +81,9 @@ let checkUserEmail = (userEmail) => {
             let user = await db.User.findOne({
                 where: {
                     email: userEmail,
-                    password: { [db.Sequelize.Op.ne]: '' }
-                }
-            })
+                    password: { [db.Sequelize.Op.ne]: "" },
+                },
+            });
             if (user) {
                 resolve(true);
             } else {
@@ -96,36 +92,37 @@ let checkUserEmail = (userEmail) => {
         } catch (e) {
             reject(e);
         }
-    })
-}
+    });
+};
 
 let getAllUsersForReact = (userId) => {
     //tham số truyền vào userId ở đây là id người dùng hoặc all như quy định bên userController.js
     return new Promise(async (resolve, reject) => {
         try {
-            let users = '';
+            let users = "";
             //trả về ít thông tin người dùng thôi không lộ hết:))
-            if (userId === 'ALL') {
+            if (userId === "ALL") {
                 users = db.User.findAll({
                     attributes: {
-                        exclude: ['password']
-                    }
-                })
+                        exclude: ["password"],
+                    },
+                });
             }
-            if (userId && userId !== 'ALL') {
+            if (userId && userId !== "ALL") {
                 users = await db.User.findOne({
-                    where: { id: userId }, attributes: {
-                        exclude: ['password']
-                    }
-                })
+                    where: { id: userId },
+                    attributes: {
+                        exclude: ["password"],
+                    },
+                });
             }
 
             resolve(users);
         } catch (e) {
             reject(e);
         }
-    })
-}
+    });
+};
 
 let createNewUserInReact = (data) => {
     //data cuả hàm này đươcj gửi từ client
@@ -136,35 +133,38 @@ let createNewUserInReact = (data) => {
             if (check) {
                 resolve({
                     errCode: 1,
-                    message: 'User has already been exist!',
+                    message: "User has already been exist!",
                 });
             } else {
                 let hashPasswordFromBcrypt = await hashUserPassword(data.password);
 
                 // Tìm người dùng dựa trên email
                 let existingUser = await db.User.findOne({
-                    where: { email: data.email }
+                    where: { email: data.email },
                 });
 
                 if (existingUser) {
                     // Nếu người dùng đã tồn tại, cập nhật thông tin
-                    await db.User.update({
-                        password: hashPasswordFromBcrypt,
-                        firstName: data.firstName,
-                        lastName: data.lastName,
-                        address: data.address,
-                        phoneNumber: data.phoneNumber,
-                        gender: data.gender,
-                        image: data.image, // Cập nhật image nếu cần
-                        roleId: data.roleId,
-                        positionId: data.positionId,
-                    }, {
-                        where: { email: data.email }
-                    });
+                    await db.User.update(
+                        {
+                            password: hashPasswordFromBcrypt,
+                            firstName: data.firstName,
+                            lastName: data.lastName,
+                            address: data.address,
+                            phoneNumber: data.phoneNumber,
+                            gender: data.gender,
+                            image: data.image, // Cập nhật image nếu cần
+                            roleId: data.roleId,
+                            positionId: data.positionId,
+                        },
+                        {
+                            where: { email: data.email },
+                        }
+                    );
 
                     resolve({
                         errCode: 0,
-                        message: 'Update user successfully!',
+                        message: "Update user successfully!",
                     });
                 } else {
                     // Nếu người dùng không tồn tại, tạo mới
@@ -183,15 +183,15 @@ let createNewUserInReact = (data) => {
 
                     resolve({
                         errCode: 0,
-                        message: 'Create user successfully!',
+                        message: "Create user successfully!",
                     });
                 }
             }
         } catch (e) {
             reject(e);
         }
-    })
-}
+    });
+};
 
 let editUserInReact = (data) => {
     return new Promise(async (resolve, reject) => {
@@ -203,15 +203,15 @@ let editUserInReact = (data) => {
             if (!data.id || !data.roleId || !data.positionId || !data.gender) {
                 resolve({
                     errCode: 2,
-                    errMessage: 'Missing parameters!',
-                })
+                    errMessage: "Missing parameters!",
+                });
             }
             let user = await db.User.findOne({
                 where: { id: data.id },
                 //ở file config.json đã chuyển raw:true nên
                 //hàm update và delete không thể chạy, khi chạy nhớ chuyển raw: false
-                raw: false
-            })
+                raw: false,
+            });
             if (user) {
                 user.firstName = data.firstName;
                 user.lastName = data.lastName;
@@ -224,7 +224,6 @@ let editUserInReact = (data) => {
                     user.image = data.image;
                 }
 
-
                 await user.save();
                 // await db.User.save({
                 //     firstName: data.firstName,
@@ -236,19 +235,19 @@ let editUserInReact = (data) => {
                 // })
                 resolve({
                     errCode: 0,
-                    message: 'User updated!',
-                })
+                    message: "User updated!",
+                });
             } else {
                 resolve({
                     errCode: 1,
-                    errMessage: 'User is not found!'
+                    errMessage: "User is not found!",
                 });
             }
         } catch (e) {
             reject(e);
         }
-    })
-}
+    });
+};
 
 let deleteUserInReact = (userIdFromReact) => {
     return new Promise(async (resolve, reject) => {
@@ -256,7 +255,6 @@ let deleteUserInReact = (userIdFromReact) => {
         // await db.User.destroy({
         //     where: { id: userIdFromReact }
         // })
-
 
         try {
             let user = await db.User.findOne({
@@ -267,20 +265,20 @@ let deleteUserInReact = (userIdFromReact) => {
             if (!user) {
                 resolve({
                     errCode: 2,
-                    errMessage: 'User is not exist!'
-                })
+                    errMessage: "User is not exist!",
+                });
             } else {
                 await user.destroy();
                 resolve({
                     errCode: 0,
-                    message: 'User has been deleted successfully'
-                })
+                    message: "User has been deleted successfully",
+                });
             }
         } catch (e) {
-            reject(e)
+            reject(e);
         }
-    })
-}
+    });
+};
 
 let getAllCodesDataService = (typeInput) => {
     return new Promise(async (resolve, reject) => {
@@ -288,7 +286,7 @@ let getAllCodesDataService = (typeInput) => {
             if (!typeInput) {
                 resolve({
                     errCode: 1,
-                    errMessage: 'Missing required parameters!'
+                    errMessage: "Missing required parameters!",
                 });
             } else {
                 let res = {};
@@ -301,13 +299,11 @@ let getAllCodesDataService = (typeInput) => {
                 res.data = allCodesData;
                 resolve(res);
             }
-
-
         } catch (e) {
             reject(e);
         }
-    })
-}
+    });
+};
 
 let getAllRelativeInforsOfCurrentSystemUserService = (currentUserEmail) => {
     return new Promise(async (resolve, reject) => {
@@ -315,27 +311,30 @@ let getAllRelativeInforsOfCurrentSystemUserService = (currentUserEmail) => {
             if (!currentUserEmail) {
                 resolve({
                     errCode: 1,
-                    errMessage: 'Missing input parameter: current user email!',
+                    errMessage: "Missing input parameter: current user email!",
                 });
             } else {
                 let res = {};
                 let userInUserTable = await db.User.findOne({
                     where: { email: currentUserEmail },
                     attributes: {
-                        exclude: ['password', 'id', 'createdAt', 'updatedAt']
+                        exclude: ["password", "id", "createdAt", "updatedAt"],
                     },
                     include: [
                         {
-                            model: db.Allcode, as: 'roleData',
-                            attributes: ['value_Eng', 'value_Vie']
+                            model: db.Allcode,
+                            as: "roleData",
+                            attributes: ["value_Eng", "value_Vie"],
                         },
                         {
-                            model: db.Allcode, as: 'positionData',
-                            attributes: ['value_Eng', 'value_Vie']
+                            model: db.Allcode,
+                            as: "positionData",
+                            attributes: ["value_Eng", "value_Vie"],
                         },
                         {
-                            model: db.Allcode, as: 'genderData',
-                            attributes: ['value_Eng', 'value_Vie']
+                            model: db.Allcode,
+                            as: "genderData",
+                            attributes: ["value_Eng", "value_Vie"],
                         },
                         // {
                         //     model: db.Booking, as: 'doctorHasAppointmentWithPatients',
@@ -360,37 +359,38 @@ let getAllRelativeInforsOfCurrentSystemUserService = (currentUserEmail) => {
                         {
                             model: db.Doctor_infor,
                             attributes: {
-                                exclude: ['id', 'doctorId']
+                                exclude: ["id", "doctorId"],
                             },
                             include: [
                                 {
-                                    model: db.Specialty, as: 'belongToSpecialty',
-                                    attributes: ['name']
+                                    model: db.Specialty,
+                                    as: "belongToSpecialty",
+                                    attributes: ["name"],
                                 },
-                            ]
+                            ],
                         },
-                    ]
+                    ],
                 });
 
                 if (userInUserTable) {
                     // Format lại các trường date và patientBirthday
                     if (userInUserTable.doctorHasAppointmentWithPatients) {
-                        userInUserTable.doctorHasAppointmentWithPatients.forEach(appointment => {
-                            appointment.date = moment(appointment.date).format('YYYY-MM-DD');
-                            appointment.patientBirthday = moment(appointment.patientBirthday).format('YYYY-MM-DD');
+                        userInUserTable.doctorHasAppointmentWithPatients.forEach((appointment) => {
+                            appointment.date = moment(appointment.date).format("YYYY-MM-DD");
+                            appointment.patientBirthday = moment(appointment.patientBirthday).format("YYYY-MM-DD");
                         });
                     }
 
                     if (userInUserTable.patientHasAppointmentWithDoctors) {
-                        userInUserTable.patientHasAppointmentWithDoctors.forEach(appointment => {
-                            appointment.date = moment(appointment.date).format('YYYY-MM-DD');
-                            appointment.patientBirthday = moment(appointment.patientBirthday).format('YYYY-MM-DD');
+                        userInUserTable.patientHasAppointmentWithDoctors.forEach((appointment) => {
+                            appointment.date = moment(appointment.date).format("YYYY-MM-DD");
+                            appointment.patientBirthday = moment(appointment.patientBirthday).format("YYYY-MM-DD");
                         });
                     }
                 }
 
                 res.errCode = 0;
-                res.errMessage = 'Get current user informations successfully!';
+                res.errMessage = "Get current user informations successfully!";
                 res.data = userInUserTable;
 
                 resolve(res);
@@ -399,7 +399,7 @@ let getAllRelativeInforsOfCurrentSystemUserService = (currentUserEmail) => {
             reject(e);
         }
     });
-}
+};
 
 let getAllRelativeBookingsOfCurrentSystemUserService = (currentUserEmail) => {
     return new Promise(async (resolve, reject) => {
@@ -407,41 +407,45 @@ let getAllRelativeBookingsOfCurrentSystemUserService = (currentUserEmail) => {
             if (!currentUserEmail) {
                 resolve({
                     errCode: 1,
-                    errMessage: 'Missing input parameter: current user email!',
+                    errMessage: "Missing input parameter: current user email!",
                 });
             } else {
                 let res = {};
                 let allBookingsOfCurrentUser = await db.User.findOne({
                     where: { email: currentUserEmail },
                     attributes: {
-                        exclude: ['password', 'id', 'createdAt', 'updatedAt', 'firstName', 'lastName', 'address', 'gender', 'phoneNumber', 'image', 'roleId', 'positionId']
+                        exclude: ["password", "id", "createdAt", "updatedAt", "firstName", "lastName", "address", "gender", "phoneNumber", "image", "roleId", "positionId"],
                     },
                     include: [
                         {
-                            model: db.Booking, as: 'doctorHasAppointmentWithPatients',
-                            attributes: ['id', 'statusId', 'timeType', 'doctorId', 'patientId', 'date', 'patientPhoneNumber', 'patientAddress', 'patientBirthday', 'patientGender'],
+                            model: db.Booking,
+                            as: "doctorHasAppointmentWithPatients",
+                            attributes: ["id", "statusId", "timeType", "doctorId", "patientId", "date", "patientPhoneNumber", "patientAddress", "patientBirthday", "patientGender"],
                             include: [
                                 {
-                                    model: db.Allcode, as: 'appointmentTimeTypeData',
-                                    attributes: ['value_Vie', 'value_Eng']
+                                    model: db.Allcode,
+                                    as: "appointmentTimeTypeData",
+                                    attributes: ["value_Vie", "value_Eng"],
                                 },
-                            ]
+                            ],
                         },
                         {
-                            model: db.Booking, as: 'patientHasAppointmentWithDoctors',
-                            attributes: ['id', 'statusId', 'timeType', 'doctorId', 'patientId', 'date', 'patientPhoneNumber', 'patientAddress', 'patientBirthday', 'patientGender'],
+                            model: db.Booking,
+                            as: "patientHasAppointmentWithDoctors",
+                            attributes: ["id", "statusId", "timeType", "doctorId", "patientId", "date", "patientPhoneNumber", "patientAddress", "patientBirthday", "patientGender"],
                             include: [
                                 {
-                                    model: db.Allcode, as: 'appointmentTimeTypeData',
-                                    attributes: ['value_Vie', 'value_Eng']
+                                    model: db.Allcode,
+                                    as: "appointmentTimeTypeData",
+                                    attributes: ["value_Vie", "value_Eng"],
                                 },
-                            ]
+                            ],
                         },
-                    ]
+                    ],
                 });
 
                 res.errCode = 0;
-                res.errMessage = 'Get current user bookings successfully!';
+                res.errMessage = "Get current user bookings successfully!";
                 res.data = allBookingsOfCurrentUser;
 
                 resolve(res);
@@ -450,7 +454,7 @@ let getAllRelativeBookingsOfCurrentSystemUserService = (currentUserEmail) => {
             reject(e);
         }
     });
-}
+};
 
 module.exports = {
     handleUserLogin: handleUserLogin,
@@ -461,5 +465,5 @@ module.exports = {
     editUserInReact: editUserInReact,
     getAllCodesDataService: getAllCodesDataService,
     getAllRelativeInforsOfCurrentSystemUserService: getAllRelativeInforsOfCurrentSystemUserService,
-    getAllRelativeBookingsOfCurrentSystemUserService: getAllRelativeBookingsOfCurrentSystemUserService
-}
+    getAllRelativeBookingsOfCurrentSystemUserService: getAllRelativeBookingsOfCurrentSystemUserService,
+};

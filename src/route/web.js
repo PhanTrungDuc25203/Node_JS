@@ -137,6 +137,12 @@ let initWebRoutes = (app) => {
     doctorController.getAppointmentHistoriesByDoctorEmail
   );
 
+  //lấy thông tin trong bảng history
+  router.get(
+    "/api/get-appointement-histories-by-patient-email",
+    patientController.getAppointmentHistoriesByPatientEmail
+  );
+
   //tạo thông tin cho một cơ sở y tế
   router.post(
     "/api/create-medical-facility",

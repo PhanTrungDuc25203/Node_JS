@@ -1,5 +1,5 @@
-require('dotenv').config();
-import nodemailer from 'nodemailer';
+require("dotenv").config();
+import nodemailer from "nodemailer";
 
 let sendAEmail = async (sentData) => {
     let transporter = nodemailer.createTransport({
@@ -13,10 +13,9 @@ let sendAEmail = async (sentData) => {
     });
 
     let getHtmlEmailDependLanguage = (sentData) => {
-        let result = '';
-        if (sentData.language === 'vi') {
-            result =
-                `
+        let result = "";
+        if (sentData.language === "vi") {
+            result = `
                     <h3>Xin chào ${sentData.patientName}</h3>
                     <p>Bạn vừa đặt lịch khám bệnh ở MedicalCare với thông tin như sau:</p>
                     <div><b>Thời gian: </b>${sentData.time}</div>
@@ -30,9 +29,8 @@ let sendAEmail = async (sentData) => {
                     <div>Cảm ơn bạn đã chọn lựa và tin dùng!</div>
                 `;
         }
-        if (sentData.language === 'en') {
-            result =
-                `
+        if (sentData.language === "en") {
+            result = `
                    <h3>Dear ${sentData.patientName}</h3>
                     <p>You have just scheduled a medical appointment at MedicalCare with the following details:</p>
                     <div><b>Time: </b>${sentData.time}</div>
@@ -49,7 +47,7 @@ let sendAEmail = async (sentData) => {
         }
 
         return result;
-    }
+    };
 
     // async..await is not allowed in global scope, must use a wrapper
     // send mail with defined transport object
@@ -61,12 +59,10 @@ let sendAEmail = async (sentData) => {
         html: getHtmlEmailDependLanguage(sentData), // html body
     });
 
-
-
     console.log("Message sent: %s", info.messageId);
     // Message sent: <d786aa62-4e0a-070a-47ed-0b0666549519@ethereal.email>
-}
+};
 
 module.exports = {
-    sendAEmail
-}
+    sendAEmail,
+};

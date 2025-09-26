@@ -8,10 +8,10 @@ let patientInforWhenBookingTime = async (req, res) => {
         console.log(e);
         return res.status(200).json({
             errCode: -1,
-            errMessage: 'Save booking form error from server!',
-        })
+            errMessage: "Save booking form error from server!",
+        });
     }
-}
+};
 
 let confirmBookingAppointment = async (req, res) => {
     try {
@@ -21,12 +21,27 @@ let confirmBookingAppointment = async (req, res) => {
         console.log(e);
         return res.status(200).json({
             errCode: -1,
-            errMessage: 'Save booking form error from server!',
-        })
+            errMessage: "Save booking form error from server!",
+        });
     }
-}
+};
+
+let getAppointmentHistoriesByPatientEmail = async (req, res) => {
+    try {
+        console.log("check patient email:", req.query.patientEmail);
+        let infor = await patientService.getAppointmentHistoriesByPatientEmailService(req.query.patientEmail);
+        return res.status(200).json(infor);
+    } catch (e) {
+        console.log(e);
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: "Get histories data fail from server!",
+        });
+    }
+};
 
 module.exports = {
     patientInforWhenBookingTime: patientInforWhenBookingTime,
     confirmBookingAppointment: confirmBookingAppointment,
-}
+    getAppointmentHistoriesByPatientEmail: getAppointmentHistoriesByPatientEmail,
+};

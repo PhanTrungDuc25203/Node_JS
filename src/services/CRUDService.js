@@ -1,5 +1,5 @@
-import bcrypt from 'bcryptjs'
-import db from '../models/index'
+import bcrypt from "bcryptjs";
+import db from "../models/index";
 
 const salt = bcrypt.genSaltSync(10);
 
@@ -19,17 +19,17 @@ let createNewUser = async (data) => {
                 image: "DataTypes.STRING",
                 roleId: data.roleId,
                 positionId: "DataTypes.STRING",
-            })
-            resolve('Create new user succesfully!');
+            });
+            resolve("Create new user succesfully!");
         } catch (e) {
             reject(e);
         }
     });
 
-    console.log('data from service!!');
+    console.log("data from service!!");
     console.log(data);
     console.log(hashPasswordFromBcrypt);
-}
+};
 
 let hashUserPassword = (password) => {
     return new Promise(async (resolve, reject) => {
@@ -39,14 +39,14 @@ let hashUserPassword = (password) => {
         } catch (e) {
             reject(e);
         }
-    })
-}
+    });
+};
 
 let getAllUser = () => {
     return new Promise(async (resolve, reject) => {
         try {
             let users = db.User.findAll({
-                // thêm thuộc tính raw:true để chỉ lấy dữ liệu thôi không lấy nhưngx thông tin 
+                // thêm thuộc tính raw:true để chỉ lấy dữ liệu thôi không lấy nhưngx thông tin
                 // khác về các thuộc tính của đối tượng nữa, chỉ lấy thông tin đối tượng
                 raw: true,
             });
@@ -54,8 +54,8 @@ let getAllUser = () => {
         } catch (e) {
             reject(e);
         }
-    })
-}
+    });
+};
 
 let getUserInformationById = (userId) => {
     return new Promise(async (resolve, reject) => {
@@ -69,23 +69,22 @@ let getUserInformationById = (userId) => {
                 resolve(user);
             } else {
                 resolve({});
-            };
+            }
         } catch (e) {
             reject(e);
         }
-    })
-}
+    });
+};
 
 let updateUserData = (data) => {
-
     return new Promise(async (resolve, reject) => {
         try {
             let user = await db.User.findOne({
                 where: { id: data.id },
                 //ở file config.json đã chuyển raw:true nên
                 //hàm update và delete không thể chạy, khi chạy nhớ chuyển raw: false
-                raw: false
-            })
+                raw: false,
+            });
             if (user) {
                 user.firstName = data.firstName;
                 user.lastName = data.lastName;
@@ -103,8 +102,8 @@ let updateUserData = (data) => {
         } catch (e) {
             console.log(e);
         }
-    })
-}
+    });
+};
 
 let deleteUserById = (needToBeDeletedUserId) => {
     return new Promise(async (resolve, reject) => {
@@ -114,22 +113,21 @@ let deleteUserById = (needToBeDeletedUserId) => {
                 //ở file config.json đã chuyển raw:true nên
                 //hàm update và delete không thể chạy, khi chạy nhớ chuyển raw: false
                 raw: false,
-            })
+            });
             if (user) {
                 await user.destroy();
             } else {
-
             }
             resolve();
         } catch (e) {
             reject(e);
         }
-    })
-}
+    });
+};
 module.exports = {
     createNewUser: createNewUser,
     getAllUser: getAllUser,
     getUserInformationById: getUserInformationById,
     updateUserData: updateUserData,
     deleteUserById: deleteUserById,
-}
+};

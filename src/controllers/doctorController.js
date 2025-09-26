@@ -13,10 +13,10 @@ let getEliteDoctorForHomePage = async (req, res) => {
         console.log(e);
         return res.status(200).json({
             errCode: -1,
-            message: 'Get elite doctor error from server!'
-        })
+            message: "Get elite doctor error from server!",
+        });
     }
-}
+};
 
 let getAllDoctorsForDoctorArticlePage = async (req, res) => {
     try {
@@ -26,10 +26,10 @@ let getAllDoctorsForDoctorArticlePage = async (req, res) => {
         console.log(e);
         return res.status(200).json({
             errCode: -1,
-            errMessage: 'Get doctors for doctorArticle page error!'
-        })
+            errMessage: "Get doctors for doctorArticle page error!",
+        });
     }
-}
+};
 
 let saveInforAndArticleOfADoctor = async (req, res) => {
     try {
@@ -39,10 +39,10 @@ let saveInforAndArticleOfADoctor = async (req, res) => {
         console.log(e);
         return res.status(200).json({
             errCode: -1,
-            errMessage: `Save doctor's infor and article error!`
-        })
+            errMessage: `Save doctor's infor and article error!`,
+        });
     }
-}
+};
 
 let getParticularInforForDoctorPage = async (req, res) => {
     try {
@@ -53,9 +53,9 @@ let getParticularInforForDoctorPage = async (req, res) => {
         return res.status(200).json({
             errCode: -1,
             errMessage: "Get particular doctor infor error from server!",
-        })
+        });
     }
-}
+};
 
 let createTimeframesForDoctorSchedule = async (req, res) => {
     try {
@@ -66,9 +66,9 @@ let createTimeframesForDoctorSchedule = async (req, res) => {
         return res.status(200).json({
             errCode: -1,
             errMessage: "Create timeframes for Doctor schedule fail from server!",
-        })
+        });
     }
-}
+};
 
 let getScheduleByDate = async (req, res) => {
     try {
@@ -79,10 +79,10 @@ let getScheduleByDate = async (req, res) => {
         console.log(e);
         return res.status(200).json({
             errCode: -1,
-            errMessage: 'Get schedule by date for a doctor error from server!',
-        })
+            errMessage: "Get schedule by date for a doctor error from server!",
+        });
     }
-}
+};
 
 let getExtraInforDoctorByID = async (req, res) => {
     try {
@@ -92,10 +92,10 @@ let getExtraInforDoctorByID = async (req, res) => {
         console.log(e);
         return res.status(200).json({
             errCode: -1,
-            errMessage: 'Get extra infor doctor error from server!',
-        })
+            errMessage: "Get extra infor doctor error from server!",
+        });
     }
-}
+};
 
 let saveAppointmentHistory = async (req, res) => {
     try {
@@ -106,9 +106,9 @@ let saveAppointmentHistory = async (req, res) => {
         return res.status(200).json({
             errCode: -1,
             errMessage: "Save appointment history fail from server!",
-        })
+        });
     }
-}
+};
 
 let getAppointmentHistoriesByDoctorEmail = async (req, res) => {
     try {
@@ -120,9 +120,9 @@ let getAppointmentHistoriesByDoctorEmail = async (req, res) => {
         return res.status(200).json({
             errCode: -1,
             errMessage: "Get histories data fail from server!",
-        })
+        });
     }
-}
+};
 
 module.exports = {
     getEliteDoctorForHomePage: getEliteDoctorForHomePage,
@@ -134,4 +134,4 @@ module.exports = {
     getExtraInforDoctorByID: getExtraInforDoctorByID,
     saveAppointmentHistory: saveAppointmentHistory,
     getAppointmentHistoriesByDoctorEmail: getAppointmentHistoriesByDoctorEmail,
-}
+};
