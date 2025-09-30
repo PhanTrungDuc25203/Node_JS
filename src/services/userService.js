@@ -530,6 +530,29 @@ let saveRateAndReviewAboutDoctorService = (data) => {
     });
 };
 
+let getRateAndReviewAboutDoctorService = (appointmentId) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!appointmentId) {
+                resolve({
+                    errCode: 1,
+                    errMessage: "Missing input parameter: appointmentId!",
+                });
+            } else {
+                let res = {};
+                let data = await db.DoctorPackageRate.findOne({
+                    where: { appointmentId: appointmentId },
+                });
+                res.errCode = 0;
+                res.data = data;
+                resolve(res);
+            }
+        } catch (e) {
+            reject(e);
+        }
+    });
+};
+
 module.exports = {
     handleUserLogin: handleUserLogin,
     checkUserEmail: checkUserEmail,
@@ -541,4 +564,5 @@ module.exports = {
     getAllRelativeInforsOfCurrentSystemUserService: getAllRelativeInforsOfCurrentSystemUserService,
     getAllRelativeBookingsOfCurrentSystemUserService: getAllRelativeBookingsOfCurrentSystemUserService,
     saveRateAndReviewAboutDoctorService: saveRateAndReviewAboutDoctorService,
+    getRateAndReviewAboutDoctorService: getRateAndReviewAboutDoctorService,
 };

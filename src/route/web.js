@@ -86,8 +86,11 @@ let initWebRoutes = (app) => {
     router.post("/api/bulk-create-timeframes-for-exam-package-schedule", medicalFacilityController.createTimeframesForExamPackageSchedule);
     //lấy các khung giờ khám của một gói khám
     router.get("/api/get-package-schedule-by-date", medicalFacilityController.getPackageScheduleByDate);
-    //lưu đánh giá nhận xét của người dùng về bác sĩ hoặc gói khám
+    //lưu đánh giá nhận xét của người dùng về thăm khám và bác sĩ
     router.post("/api/save-rate-and-review-about-doctor", userController.saveRateAndReviewAboutDoctor);
+    //lấy dữ liệu về đánh giá nhận xét của người dùng về thăm khám và bác sĩ
+    router.get("/api/get-rate-and-review-about-doctor", userController.getRateAndReviewAboutDoctor);
+
     return app.use("/", router);
 };
 module.exports = initWebRoutes;
