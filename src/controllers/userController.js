@@ -140,6 +140,20 @@ let getAllRelativeBookingsOfCurrentSystemUser = async (req, res) => {
     }
 };
 
+let saveRateAndReviewAboutDoctor = async (req, res) => {
+    try {
+        console.log("check req: ", req.body);
+        let response = await userService.saveRateAndReviewAboutDoctorService(req.body);
+        return res.status(200).json(response);
+    } catch (e) {
+        console.log(e);
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: `Save doctor or package rate and review error from server!`,
+        });
+    }
+};
+
 module.exports = {
     handleLogin: handleLogin,
     handleGetAllUsersForReact: handleGetAllUsersForReact,
@@ -150,4 +164,5 @@ module.exports = {
     getAllCodesData: getAllCodesData,
     getAllRelativeInforsOfCurrentSystemUser: getAllRelativeInforsOfCurrentSystemUser,
     getAllRelativeBookingsOfCurrentSystemUser: getAllRelativeBookingsOfCurrentSystemUser,
+    saveRateAndReviewAboutDoctor: saveRateAndReviewAboutDoctor,
 };

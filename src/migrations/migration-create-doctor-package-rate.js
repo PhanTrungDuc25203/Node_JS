@@ -3,7 +3,7 @@
 module.exports = {
     async up(queryInterface, Sequelize) {
         //tên bảng viết hoa hay thường thì mysql tự chuyển thành thường
-        await queryInterface.createTable("DoctorPackageRate", {
+        await queryInterface.createTable("DoctorPackageRates", {
             id: {
                 allowNull: false,
                 autoIncrement: true,
@@ -14,17 +14,33 @@ module.exports = {
                 type: Sequelize.INTEGER,
                 allowNull: false,
             },
+            userEmail: {
+                type: Sequelize.STRING,
+                allowNull: false,
+            },
             doctorId: {
                 type: Sequelize.INTEGER,
                 allowNull: false,
             },
+            doctorEmail: {
+                type: Sequelize.STRING,
+                allowNull: false,
+            },
             packageId: {
-                type: Sequelize.INTEGER,
+                type: Sequelize.STRING,
+                allowNull: false,
+            },
+            packageName: {
+                type: Sequelize.STRING,
                 allowNull: false,
             },
             appointmentId: {
-                type: Sequelize.INTEGER,
                 allowNull: false,
+                type: Sequelize.INTEGER,
+            },
+            paidPackageId: {
+                allowNull: false,
+                type: Sequelize.INTEGER,
             },
             rating: {
                 type: Sequelize.TINYINT,
@@ -34,12 +50,8 @@ module.exports = {
                 type: Sequelize.TEXT("long"),
                 allowNull: true,
             },
-            image: {
-                type: Sequelize.BLOB("long"),
-                allowNull: true,
-            },
-            mimeType: {
-                type: Sequelize.STRING(50),
+            images: {
+                type: Sequelize.TEXT("long"),
                 allowNull: true,
             },
             createdAt: {
@@ -53,6 +65,6 @@ module.exports = {
         });
     },
     async down(queryInterface, Sequelize) {
-        await queryInterface.dropTable("Users");
+        await queryInterface.dropTable("DoctorPackageRates");
     },
 };

@@ -456,6 +456,80 @@ let getAllRelativeBookingsOfCurrentSystemUserService = (currentUserEmail) => {
     });
 };
 
+let saveRateAndReviewAboutDoctorService = (data) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!data.userEmail || !data.doctorEmail || !data.appointmentId || !data.rating) {
+                return resolve({
+                    errCode: 1,
+                    errMessage: "Missing input parameter: userEmail; doctorEmail; appointmentId; rating!",
+                });
+            }
+
+            let bookedAppointment = await db.Booking.findOne({
+                where: { id: data.appointmentId },
+                attributes: {
+                    exclude: ["timeType", "date", "patientPhoneNumber", "patientBirthday", "patientAddress", "patientGender", "token", "createdAt", "updatedAt"],
+                },
+            });
+
+            console.log("Check: ", bookedAppointment);
+
+            if (!bookedAppointment || bookedAppointment.statusId !== "S3") {
+                return resolve({
+                    errCode: 2,
+                    errMessage: "Appointment not found or not valid to review!",
+                });
+            }
+
+            const rateAndReviewData = {
+                userId: bookedAppointment.patientId,
+                userEmail: data.userEmail,
+                doctorId: bookedAppointment.doctorId,
+                doctorEmail: data.doctorEmail,
+                packageId: "",
+                packageName: "",
+                appointmentId: bookedAppointment.id,
+                paidPackageId: "",
+                rating: data.rating,
+                content: data.content && data.content.trim() !== "" ? data.content : null,
+                images: data.images ? (data.images.length > 0 ? JSON.stringify(data.images) : null) : null,
+            };
+
+            let existingReview = await db.DoctorPackageRate.findOne({
+                where: { appointmentId: bookedAppointment.id },
+            });
+
+            if (!existingReview) {
+                await db.DoctorPackageRate.create(rateAndReviewData);
+                return resolve({
+                    errCode: 0,
+                    message: "Save rate and review about doctor successfully!",
+                });
+            } else {
+                let createdTime = new Date(existingReview.createdAt);
+                let now = new Date();
+                let diffHours = (now - createdTime) / (1000 * 60 * 60);
+
+                if (diffHours <= 24) {
+                    await existingReview.update(rateAndReviewData);
+                    return resolve({
+                        errCode: 0,
+                        message: "Update rate and review about doctor successfully!",
+                    });
+                } else {
+                    return resolve({
+                        errCode: 3,
+                        errMessage: "You can only update your review within 1 day after posting!",
+                    });
+                }
+            }
+        } catch (e) {
+            reject(e);
+        }
+    });
+};
+
 module.exports = {
     handleUserLogin: handleUserLogin,
     checkUserEmail: checkUserEmail,
@@ -466,4 +540,5 @@ module.exports = {
     getAllCodesDataService: getAllCodesDataService,
     getAllRelativeInforsOfCurrentSystemUserService: getAllRelativeInforsOfCurrentSystemUserService,
     getAllRelativeBookingsOfCurrentSystemUserService: getAllRelativeBookingsOfCurrentSystemUserService,
+    saveRateAndReviewAboutDoctorService: saveRateAndReviewAboutDoctorService,
 };
