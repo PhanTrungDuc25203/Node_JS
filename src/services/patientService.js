@@ -100,6 +100,7 @@ let patientInforWhenBookingTimeService = (data) => {
                             patientBirthday: data.birthday,
                             patientAddress: data.address,
                             patientGender: data.selectedGender,
+                            examReason: data.reason,
                             token: token,
                         },
                     });

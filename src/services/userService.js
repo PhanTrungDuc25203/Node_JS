@@ -420,7 +420,7 @@ let getAllRelativeBookingsOfCurrentSystemUserService = (currentUserEmail) => {
                         {
                             model: db.Booking,
                             as: "doctorHasAppointmentWithPatients",
-                            attributes: ["id", "statusId", "timeType", "doctorId", "patientId", "date", "patientPhoneNumber", "patientAddress", "patientBirthday", "patientGender"],
+                            attributes: ["id", "statusId", "timeType", "doctorId", "patientId", "date", "patientPhoneNumber", "patientAddress", "patientBirthday", "patientGender", "examReason"],
                             include: [
                                 {
                                     model: db.Allcode,
