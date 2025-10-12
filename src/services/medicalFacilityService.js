@@ -326,12 +326,23 @@ let getAllExamPackageService = (inputId) => {
                 });
             }
             if (inputId && inputId !== "ALL" && inputId !== "ALLANDIMAGE") {
-                packageRes = db.ExamPackage_specialty_medicalFacility.findAll({
+                packageRes = await db.ExamPackage_specialty_medicalFacility.findAll({
                     where: { id: inputId },
                     attributes: {
                         exclude: ["createdAt", "updatedAt"],
                     },
-                    include: [{ model: db.Allcode, as: "priceDataForPackage", attributes: ["value_Eng", "value_Vie"] }],
+                    include: [
+                        {
+                            model: db.Allcode,
+                            as: "priceDataForPackage",
+                            attributes: ["value_Eng", "value_Vie"],
+                        },
+                        {
+                            model: db.ComplexMedicalFacility,
+                            as: "medicalFacilityPackage",
+                            attributes: ["id", "name", "address"],
+                        },
+                    ],
                 });
             }
             resolve(packageRes);
