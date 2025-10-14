@@ -140,6 +140,21 @@ let getAllRelativeBookingsOfCurrentSystemUser = async (req, res) => {
     }
 };
 
+let getAllRelativeBookingsOfCurrentSystemUser2 = async (req, res) => {
+    try {
+        setTimeout(async () => {
+            let data = await userService.getAllRelativeBookingsOfCurrentSystemUser2Service(req.query.email);
+            return res.status(200).json(data);
+        }, 200);
+    } catch (e) {
+        console.log(`Get all relative bookings of current system's user error: `, e);
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: `Get all relative bookings of current system's user error from server!`,
+        });
+    }
+};
+
 let saveRateAndReviewAboutDoctor = async (req, res) => {
     try {
         console.log("check req: ", req.body);
@@ -176,6 +191,7 @@ module.exports = {
     getAllCodesData: getAllCodesData,
     getAllRelativeInforsOfCurrentSystemUser: getAllRelativeInforsOfCurrentSystemUser,
     getAllRelativeBookingsOfCurrentSystemUser: getAllRelativeBookingsOfCurrentSystemUser,
+    getAllRelativeBookingsOfCurrentSystemUser2: getAllRelativeBookingsOfCurrentSystemUser2,
     saveRateAndReviewAboutDoctor: saveRateAndReviewAboutDoctor,
     getRateAndReviewAboutDoctor: getRateAndReviewAboutDoctor,
 };

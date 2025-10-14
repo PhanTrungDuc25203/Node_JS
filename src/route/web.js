@@ -66,6 +66,7 @@ let initWebRoutes = (app) => {
     //lấy tất cả dữ liệu liên quan đến người đang sử dụng hệ thống bằng gamil của họ
     router.get("/api/get-all-relative-infors-of-current-system-user", userController.getAllRelativeInforsOfCurrentSystemUser);
     router.get("/api/get-all-relative-bookings-of-current-system-user", userController.getAllRelativeBookingsOfCurrentSystemUser);
+    router.get("/api/get-all-relative-bookings-of-current-system-user-2", userController.getAllRelativeBookingsOfCurrentSystemUser2);
 
     router.post("/api/save-appointment-history", doctorController.saveAppointmentHistory);
     //lấy thông tin trong bảng history

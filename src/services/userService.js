@@ -456,6 +456,84 @@ let getAllRelativeBookingsOfCurrentSystemUserService = (currentUserEmail) => {
     });
 };
 
+let getAllRelativeBookingsOfCurrentSystemUser2Service = (currentUserEmail) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!currentUserEmail) {
+                resolve({
+                    errCode: 1,
+                    errMessage: "Missing input parameter: current user email!",
+                });
+                return;
+            }
+
+            // Tìm user hiện tại và include các booking liên quan
+            let allBookingsOfCurrentUser = await db.User.findOne({
+                where: { email: currentUserEmail },
+                attributes: {
+                    // giữ lại những trường bạn cần cho user hiện tại, loại bỏ phần nhạy cảm
+                    exclude: ["password", "id", "createdAt", "updatedAt", "firstName", "lastName", "address", "gender", "phoneNumber", "image", "roleId", "positionId"],
+                },
+                include: [
+                    // Các booking mà user này là bác sĩ (doctorId = current user id)
+                    {
+                        model: db.Booking,
+                        as: "doctorHasAppointmentWithPatients",
+                        attributes: ["id", "statusId", "timeType", "doctorId", "patientId", "date", "patientPhoneNumber", "patientAddress", "patientBirthday", "patientGender", "examReason"],
+                        include: [
+                            // time type data
+                            {
+                                model: db.Allcode,
+                                as: "appointmentTimeTypeData",
+                                attributes: ["value_Vie", "value_Eng"],
+                            },
+                            // vì booking ở đây là booking where doctorId = current user,
+                            // ta cần include patient info: dùng alias patientHasAppointmentWithDoctors
+                            {
+                                model: db.User,
+                                as: "patientHasAppointmentWithDoctors",
+                                attributes: ["id", "firstName", "lastName", "address", "phoneNumber"],
+                            },
+                        ],
+                    },
+
+                    // Các booking mà user này là bệnh nhân (patientId = current user id)
+                    {
+                        model: db.Booking,
+                        as: "patientHasAppointmentWithDoctors",
+                        attributes: ["id", "statusId", "timeType", "doctorId", "patientId", "date", "patientPhoneNumber", "patientAddress", "patientBirthday", "patientGender"],
+                        include: [
+                            // time type data
+                            {
+                                model: db.Allcode,
+                                as: "appointmentTimeTypeData",
+                                attributes: ["value_Vie", "value_Eng"],
+                            },
+                            // vì booking ở đây là booking where patientId = current user,
+                            // ta cần include doctor info: dùng alias doctorHasAppointmentWithPatients
+                            {
+                                model: db.User,
+                                as: "doctorHasAppointmentWithPatients",
+                                attributes: ["id", "firstName", "lastName", "address", "phoneNumber"],
+                            },
+                        ],
+                    },
+                ],
+            });
+
+            const res = {
+                errCode: 0,
+                errMessage: "Get current user bookings successfully!",
+                data: allBookingsOfCurrentUser,
+            };
+
+            resolve(res);
+        } catch (e) {
+            reject(e);
+        }
+    });
+};
+
 let saveRateAndReviewAboutDoctorService = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -563,6 +641,7 @@ module.exports = {
     getAllCodesDataService: getAllCodesDataService,
     getAllRelativeInforsOfCurrentSystemUserService: getAllRelativeInforsOfCurrentSystemUserService,
     getAllRelativeBookingsOfCurrentSystemUserService: getAllRelativeBookingsOfCurrentSystemUserService,
+    getAllRelativeBookingsOfCurrentSystemUser2Service: getAllRelativeBookingsOfCurrentSystemUser2Service,
     saveRateAndReviewAboutDoctorService: saveRateAndReviewAboutDoctorService,
     getRateAndReviewAboutDoctorService: getRateAndReviewAboutDoctorService,
 };
