@@ -322,6 +322,17 @@ let getScheduleByDateService = (doctorId, date) => {
                     nest: true,
                 });
 
+                let bookedSchedule = await db.Booking.findAll({
+                    where: {
+                        doctorId: doctorId,
+                        date: numberDate,
+                        statusId: "S2",
+                    },
+                    attributes: {
+                        exclude: ["patientPhoneNumber", "patientBirthday", "patientAddress", "patientGender", "examReason", "createdAt", "updatedAt"],
+                    },
+                });
+
                 console.log("Check schedule data: ", scheduleData);
                 if (!scheduleData) {
                     scheduleData = ["no schedule"];
@@ -331,6 +342,7 @@ let getScheduleByDateService = (doctorId, date) => {
                     errCode: 0,
                     errMessage: "Get doctor schedule successfully!",
                     data: scheduleData,
+                    bookedSchedule: bookedSchedule,
                 });
             }
         } catch (e) {}

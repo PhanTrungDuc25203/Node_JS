@@ -401,62 +401,140 @@ let getAllRelativeInforsOfCurrentSystemUserService = (currentUserEmail) => {
     });
 };
 
-let getAllRelativeBookingsOfCurrentSystemUserService = (currentUserEmail) => {
-    return new Promise(async (resolve, reject) => {
-        try {
-            if (!currentUserEmail) {
-                resolve({
-                    errCode: 1,
-                    errMessage: "Missing input parameter: current user email!",
-                });
-            } else {
-                let res = {};
-                let allBookingsOfCurrentUser = await db.User.findOne({
-                    where: { email: currentUserEmail },
-                    attributes: {
-                        exclude: ["password", "id", "createdAt", "updatedAt", "firstName", "lastName", "address", "gender", "phoneNumber", "image", "roleId", "positionId"],
-                    },
-                    include: [
-                        {
-                            model: db.Booking,
-                            as: "doctorHasAppointmentWithPatients",
-                            attributes: ["id", "statusId", "timeType", "doctorId", "patientId", "date", "patientPhoneNumber", "patientAddress", "patientBirthday", "patientGender", "examReason"],
-                            include: [
-                                {
-                                    model: db.Allcode,
-                                    as: "appointmentTimeTypeData",
-                                    attributes: ["value_Vie", "value_Eng"],
-                                },
-                            ],
-                        },
-                        {
-                            model: db.Booking,
-                            as: "patientHasAppointmentWithDoctors",
-                            attributes: ["id", "statusId", "timeType", "doctorId", "patientId", "date", "patientPhoneNumber", "patientAddress", "patientBirthday", "patientGender"],
-                            include: [
-                                {
-                                    model: db.Allcode,
-                                    as: "appointmentTimeTypeData",
-                                    attributes: ["value_Vie", "value_Eng"],
-                                },
-                            ],
-                        },
-                    ],
-                });
+// let getAllRelativeBookingsOfCurrentSystemUserService = (currentUserEmail) => {
+//     return new Promise(async (resolve, reject) => {
+//         try {
+//             if (!currentUserEmail) {
+//                 resolve({
+//                     errCode: 1,
+//                     errMessage: "Missing input parameter: current user email!",
+//                 });
+//             } else {
+//                 let res = {};
+//                 let allBookingsOfCurrentUser = await db.User.findOne({
+//                     where: { email: currentUserEmail },
+//                     attributes: {
+//                         exclude: ["password", "id", "createdAt", "updatedAt", "firstName", "lastName", "address", "gender", "phoneNumber", "image", "roleId", "positionId"],
+//                     },
+//                     include: [
+//                         {
+//                             model: db.Booking,
+//                             as: "doctorHasAppointmentWithPatients",
+//                             attributes: ["id", "statusId", "timeType", "doctorId", "patientId", "date", "patientPhoneNumber", "patientAddress", "patientBirthday", "patientGender", "examReason"],
+//                             include: [
+//                                 {
+//                                     model: db.Allcode,
+//                                     as: "appointmentTimeTypeData",
+//                                     attributes: ["value_Vie", "value_Eng"],
+//                                 },
+//                             ],
+//                         },
+//                         {
+//                             model: db.Booking,
+//                             as: "patientHasAppointmentWithDoctors",
+//                             attributes: ["id", "statusId", "timeType", "doctorId", "patientId", "date", "patientPhoneNumber", "patientAddress", "patientBirthday", "patientGender"],
+//                             include: [
+//                                 {
+//                                     model: db.Allcode,
+//                                     as: "appointmentTimeTypeData",
+//                                     attributes: ["value_Vie", "value_Eng"],
+//                                 },
+//                             ],
+//                         },
+//                     ],
+//                 });
 
-                res.errCode = 0;
-                res.errMessage = "Get current user bookings successfully!";
-                res.data = allBookingsOfCurrentUser;
+//                 res.errCode = 0;
+//                 res.errMessage = "Get current user bookings successfully!";
+//                 res.data = allBookingsOfCurrentUser;
 
-                resolve(res);
-            }
-        } catch (e) {
-            reject(e);
-        }
-    });
-};
+//                 resolve(res);
+//             }
+//         } catch (e) {
+//             reject(e);
+//         }
+//     });
+// };
 
-let getAllRelativeBookingsOfCurrentSystemUser2Service = (currentUserEmail) => {
+// let getAllRelativeBookingsOfCurrentSystemUser2Service = (currentUserEmail) => {
+//     return new Promise(async (resolve, reject) => {
+//         try {
+//             if (!currentUserEmail) {
+//                 resolve({
+//                     errCode: 1,
+//                     errMessage: "Missing input parameter: current user email!",
+//                 });
+//                 return;
+//             }
+
+//             // Tìm user hiện tại và include các booking liên quan
+//             let allBookingsOfCurrentUser = await db.User.findOne({
+//                 where: { email: currentUserEmail },
+//                 attributes: {
+//                     // giữ lại những trường bạn cần cho user hiện tại, loại bỏ phần nhạy cảm
+//                     exclude: ["password", "id", "createdAt", "updatedAt", "firstName", "lastName", "address", "gender", "phoneNumber", "image", "roleId", "positionId"],
+//                 },
+//                 include: [
+//                     // Các booking mà user này là bác sĩ (doctorId = current user id)
+//                     {
+//                         model: db.Booking,
+//                         as: "doctorHasAppointmentWithPatients",
+//                         attributes: ["id", "statusId", "timeType", "doctorId", "patientId", "date", "patientPhoneNumber", "patientAddress", "patientBirthday", "patientGender", "examReason"],
+//                         include: [
+//                             // time type data
+//                             {
+//                                 model: db.Allcode,
+//                                 as: "appointmentTimeTypeData",
+//                                 attributes: ["value_Vie", "value_Eng"],
+//                             },
+//                             // vì booking ở đây là booking where doctorId = current user,
+//                             // ta cần include patient info: dùng alias patientHasAppointmentWithDoctors
+//                             {
+//                                 model: db.User,
+//                                 as: "patientHasAppointmentWithDoctors",
+//                                 attributes: ["id", "firstName", "lastName", "address", "phoneNumber"],
+//                             },
+//                         ],
+//                     },
+
+//                     // Các booking mà user này là bệnh nhân (patientId = current user id)
+//                     {
+//                         model: db.Booking,
+//                         as: "patientHasAppointmentWithDoctors",
+//                         attributes: ["id", "statusId", "timeType", "doctorId", "patientId", "date", "patientPhoneNumber", "patientAddress", "patientBirthday", "patientGender"],
+//                         include: [
+//                             // time type data
+//                             {
+//                                 model: db.Allcode,
+//                                 as: "appointmentTimeTypeData",
+//                                 attributes: ["value_Vie", "value_Eng"],
+//                             },
+//                             // vì booking ở đây là booking where patientId = current user,
+//                             // ta cần include doctor info: dùng alias doctorHasAppointmentWithPatients
+//                             {
+//                                 model: db.User,
+//                                 as: "doctorHasAppointmentWithPatients",
+//                                 attributes: ["id", "firstName", "lastName", "address", "phoneNumber"],
+//                             },
+//                         ],
+//                     },
+//                 ],
+//             });
+
+//             const res = {
+//                 errCode: 0,
+//                 errMessage: "Get current user bookings successfully!",
+//                 data: allBookingsOfCurrentUser,
+//             };
+
+//             resolve(res);
+//         } catch (e) {
+//             reject(e);
+//         }
+//     });
+// };
+
+let getAllRelativeBookingsOfCurrentSystemUserService = (currentUserEmail, appointmentWithUser = false) => {
     return new Promise(async (resolve, reject) => {
         try {
             if (!currentUserEmail) {
@@ -467,28 +545,50 @@ let getAllRelativeBookingsOfCurrentSystemUser2Service = (currentUserEmail) => {
                 return;
             }
 
-            // Tìm user hiện tại và include các booking liên quan
-            let allBookingsOfCurrentUser = await db.User.findOne({
-                where: { email: currentUserEmail },
-                attributes: {
-                    // giữ lại những trường bạn cần cho user hiện tại, loại bỏ phần nhạy cảm
-                    exclude: ["password", "id", "createdAt", "updatedAt", "firstName", "lastName", "address", "gender", "phoneNumber", "image", "roleId", "positionId"],
-                },
-                include: [
-                    // Các booking mà user này là bác sĩ (doctorId = current user id)
+            let includeOptions = [];
+
+            // --- Trường hợp 1: chỉ lấy thông tin cơ bản (phiên bản cũ)
+            if (!appointmentWithUser) {
+                includeOptions = [
                     {
                         model: db.Booking,
                         as: "doctorHasAppointmentWithPatients",
                         attributes: ["id", "statusId", "timeType", "doctorId", "patientId", "date", "patientPhoneNumber", "patientAddress", "patientBirthday", "patientGender", "examReason"],
                         include: [
-                            // time type data
                             {
                                 model: db.Allcode,
                                 as: "appointmentTimeTypeData",
                                 attributes: ["value_Vie", "value_Eng"],
                             },
-                            // vì booking ở đây là booking where doctorId = current user,
-                            // ta cần include patient info: dùng alias patientHasAppointmentWithDoctors
+                        ],
+                    },
+                    {
+                        model: db.Booking,
+                        as: "patientHasAppointmentWithDoctors",
+                        attributes: ["id", "statusId", "timeType", "doctorId", "patientId", "date", "patientPhoneNumber", "patientAddress", "patientBirthday", "patientGender"],
+                        include: [
+                            {
+                                model: db.Allcode,
+                                as: "appointmentTimeTypeData",
+                                attributes: ["value_Vie", "value_Eng"],
+                            },
+                        ],
+                    },
+                ];
+            }
+            // --- Trường hợp 2: lấy thêm thông tin user liên quan (phiên bản mới)
+            else {
+                includeOptions = [
+                    {
+                        model: db.Booking,
+                        as: "doctorHasAppointmentWithPatients",
+                        attributes: ["id", "statusId", "timeType", "doctorId", "patientId", "date", "patientPhoneNumber", "patientAddress", "patientBirthday", "patientGender", "examReason"],
+                        include: [
+                            {
+                                model: db.Allcode,
+                                as: "appointmentTimeTypeData",
+                                attributes: ["value_Vie", "value_Eng"],
+                            },
                             {
                                 model: db.User,
                                 as: "patientHasAppointmentWithDoctors",
@@ -496,21 +596,16 @@ let getAllRelativeBookingsOfCurrentSystemUser2Service = (currentUserEmail) => {
                             },
                         ],
                     },
-
-                    // Các booking mà user này là bệnh nhân (patientId = current user id)
                     {
                         model: db.Booking,
                         as: "patientHasAppointmentWithDoctors",
                         attributes: ["id", "statusId", "timeType", "doctorId", "patientId", "date", "patientPhoneNumber", "patientAddress", "patientBirthday", "patientGender"],
                         include: [
-                            // time type data
                             {
                                 model: db.Allcode,
                                 as: "appointmentTimeTypeData",
                                 attributes: ["value_Vie", "value_Eng"],
                             },
-                            // vì booking ở đây là booking where patientId = current user,
-                            // ta cần include doctor info: dùng alias doctorHasAppointmentWithPatients
                             {
                                 model: db.User,
                                 as: "doctorHasAppointmentWithPatients",
@@ -518,16 +613,24 @@ let getAllRelativeBookingsOfCurrentSystemUser2Service = (currentUserEmail) => {
                             },
                         ],
                     },
-                ],
+                ];
+            }
+
+            let allBookingsOfCurrentUser = await db.User.findOne({
+                where: { email: currentUserEmail },
+                attributes: {
+                    exclude: ["password", "id", "createdAt", "updatedAt", "firstName", "lastName", "address", "gender", "phoneNumber", "image", "roleId", "positionId"],
+                },
+                include: includeOptions,
             });
 
-            const res = {
+            const resData = {
                 errCode: 0,
                 errMessage: "Get current user bookings successfully!",
                 data: allBookingsOfCurrentUser,
             };
 
-            resolve(res);
+            resolve(resData);
         } catch (e) {
             reject(e);
         }
@@ -641,7 +744,7 @@ module.exports = {
     getAllCodesDataService: getAllCodesDataService,
     getAllRelativeInforsOfCurrentSystemUserService: getAllRelativeInforsOfCurrentSystemUserService,
     getAllRelativeBookingsOfCurrentSystemUserService: getAllRelativeBookingsOfCurrentSystemUserService,
-    getAllRelativeBookingsOfCurrentSystemUser2Service: getAllRelativeBookingsOfCurrentSystemUser2Service,
+    // getAllRelativeBookingsOfCurrentSystemUser2Service: getAllRelativeBookingsOfCurrentSystemUser2Service,
     saveRateAndReviewAboutDoctorService: saveRateAndReviewAboutDoctorService,
     getRateAndReviewAboutDoctorService: getRateAndReviewAboutDoctorService,
 };
