@@ -1,4 +1,5 @@
 import express from "express";
+import { authMiddleware, authorizeRoles } from "../middleware/authMiddleware";
 import homeController from "../controllers/homeController";
 import userController from "../controllers/userController";
 import doctorController from "../controllers/doctorController";
@@ -24,7 +25,7 @@ let initWebRoutes = (app) => {
     router.post("/api/login", userController.handleLogin);
     //viết link api lất tất cả người dùng ra cho react
     router.get("/api/get-all-users-for-react", userController.handleGetAllUsersForReact);
-    router.post("/api/create-new-user-in-react", userController.handleCreateNewUserInReact);
+    router.post("/api/create-new-user-in-react", authMiddleware, authorizeRoles("R1"), userController.handleCreateNewUserInReact);
     router.put("/api/edit-user-in-react", userController.handleEditUserInReact);
     router.delete("/api/delete-user-in-react", userController.handleDeleteUserInReact);
     router.get("/api/check-user-email-already-exist", userController.checkEmailWetherAlreadyExist);
