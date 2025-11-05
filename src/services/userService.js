@@ -654,7 +654,7 @@ let saveRateAndReviewAboutDoctorService = (data) => {
                 },
             });
 
-            console.log("Check: ", bookedAppointment);
+            // console.log("Check: ", bookedAppointment);
 
             if (!bookedAppointment || bookedAppointment.statusId !== "S3") {
                 return resolve({

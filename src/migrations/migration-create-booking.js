@@ -45,6 +45,15 @@ module.exports = {
                 type: Sequelize.TEXT("long"),
                 allowNull: true,
             },
+            paymentMethod: {
+                type: Sequelize.STRING,
+            },
+            paymentStatus: {
+                type: Sequelize.STRING,
+            },
+            paidAmount: {
+                type: Sequelize.INTEGER,
+            },
 
             createdAt: {
                 allowNull: false,

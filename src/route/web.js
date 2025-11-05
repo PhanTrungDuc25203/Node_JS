@@ -7,6 +7,7 @@ import patientController from "../controllers/patientController";
 import specialtyController from "../controllers/specialtyController";
 import medicalFacilityController from "../controllers/medicalFacilityController";
 import searchController from "../controllers/searchController";
+import paymentController from "../controllers/paymentController";
 
 let router = express.Router();
 
@@ -93,6 +94,9 @@ let initWebRoutes = (app) => {
     router.post("/api/save-rate-and-review-about-doctor", userController.saveRateAndReviewAboutDoctor);
     //lấy dữ liệu về đánh giá nhận xét của người dùng về thăm khám và bác sĩ
     router.get("/api/get-rate-and-review-about-doctor", userController.getRateAndReviewAboutDoctor);
+
+    //route thanh toán
+    router.post("/api/create_payment_url", paymentController.createVnpayPaymentUrl);
 
     return app.use("/", router);
 };

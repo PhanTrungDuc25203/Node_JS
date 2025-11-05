@@ -5,11 +5,16 @@ require("dotenv").config();
 import _ from "lodash";
 import moment from "moment";
 import { where } from "sequelize";
-import sendEmailService from "./sendEmailService";
+import sendConfirmBookingEmailService from "./sendConfirmBookingEmailService";
 import { v4 as uuidv4 } from "uuid";
 
 let buildUrlConfirmMedicalRecord = (doctorId, token) => {
     let result = `${process.env.URL_REACT_SERVER}/confirm-booking?token=${token}&doctorId=${doctorId}`;
+    return result;
+};
+
+let buildUrlPaymentPage = (doctorId, token) => {
+    let result = `${process.env.URL_REACT_SERVER}/booking-payment?token=${token}&doctorId=${doctorId}`;
     return result;
 };
 
@@ -36,9 +41,13 @@ let patientInforWhenBookingTimeService = (data) => {
                     raw: false,
                 });
 
-                let token = uuidv4(); // ⇨ '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d'
+                let token = uuidv4();
 
-                await sendEmailService.sendAEmail({
+                // ✅ Xác định link redirect dựa trên phương thức thanh toán
+                let redirectLink = data.selectedPaymentMethod === "PM1" ? buildUrlPaymentPage(data.doctorId, token) : buildUrlConfirmMedicalRecord(data.doctorId, token);
+
+                // ✅ Gửi email
+                await sendConfirmBookingEmailService.sendAEmail({
                     receiverEmail: data.email,
                     patientName: data.fullname,
                     time: data.appointmentMoment,
@@ -46,13 +55,13 @@ let patientInforWhenBookingTimeService = (data) => {
                     clinicName: doctorInfor.Doctor_infor.clinicName,
                     clinicAddress: doctorInfor.Doctor_infor.clinicAddress,
                     language: data.language,
-                    redirectLink: buildUrlConfirmMedicalRecord(data.doctorId, token),
+                    redirectLink: redirectLink,
+                    isPayment: data.selectedPaymentMethod === "PM1" ? true : false,
                 });
 
-                //upsert data
-                let fullName = data.fullname.trim(); // loại bỏ khoảng trắng thừa nếu có
+                // ✅ Xử lý họ tên
+                let fullName = data.fullname.trim();
                 let lastSpaceIndex = fullName.lastIndexOf(" ");
-
                 let firstName = lastSpaceIndex === -1 ? fullName : fullName.slice(lastSpaceIndex + 1);
                 let lastName = lastSpaceIndex === -1 ? "" : fullName.slice(0, lastSpaceIndex);
 
@@ -69,29 +78,16 @@ let patientInforWhenBookingTimeService = (data) => {
                     },
                 });
 
-                // let patient = await db.User.findOrCreate({
-                //     where: { email: data.email },
-                //     defaults: {
-                //         email: data.email,
-                //         lastName: data.fullname,
-                //         phoneNumber: data.phoneNumber,
-                //         address: data.address,
-                //         gender: data.selectedGender,
-                //         roleId: 'R3',
-                //     }
-                // });
-
-                //create a booking records
+                // ✅ Lưu bản ghi booking
                 if (patient && patient[0]) {
                     await db.Booking.findOrCreate({
                         where: {
-                            //khi khác S3 thì không lưu bản ghi mới: db.Sequelize.Op.ne là not equal = ne
                             patientId: patient[0].id,
                             doctorId: data.doctorId,
                             statusId: { [db.Sequelize.Op.ne]: "S3" },
                         },
                         defaults: {
-                            statusId: "S1", //hardcode
+                            statusId: "S1",
                             doctorId: data.doctorId,
                             patientId: patient[0].id,
                             date: data.date,
@@ -101,6 +97,9 @@ let patientInforWhenBookingTimeService = (data) => {
                             patientAddress: data.address,
                             patientGender: data.selectedGender,
                             examReason: data.reason,
+                            paymentMethod: data.selectedPaymentMethod || "PM3",
+                            paymentStatus: "PT1",
+                            paidAmount: 0,
                             token: token,
                         },
                     });
@@ -109,7 +108,6 @@ let patientInforWhenBookingTimeService = (data) => {
                 resolve({
                     errCode: 0,
                     errMessage: `Save patient's information successfully!`,
-                    // data: patient,
                 });
             }
         } catch (e) {
@@ -133,12 +131,54 @@ let confirmBookingAppointmentService = (data) => {
                         token: data.token,
                         statusId: "S1",
                     },
+                    include: [
+                        {
+                            model: db.User,
+                            as: "doctorHasAppointmentWithPatients",
+                            attributes: ["id", "firstName", "lastName", "address", "phoneNumber"],
+                            include: [
+                                {
+                                    model: db.Doctor_infor,
+                                    attributes: {
+                                        exclude: ["id", "doctorId", "provinceId", "specialtyId", "clinicId", "note", "count"],
+                                    },
+                                    include: [
+                                        {
+                                            model: db.Allcode,
+                                            as: "priceTypeData",
+                                            attributes: ["value_Eng", "value_Vie"],
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
                     raw: false,
                 });
 
                 if (appointment) {
-                    appointment.statusId = "S2";
-                    await appointment.save();
+                    switch (appointment.paymentMethod) {
+                        case "PM1":
+                            appointment.statusId = "S2";
+                            appointment.paidAmount = data.paidAmount / 100;
+                            let amountToBePaid = +appointment?.doctorHasAppointmentWithPatients?.Doctor_infor?.priceTypeData?.value_Vie;
+                            let differential = amountToBePaid - data.paidAmount / 100;
+                            if (differential === 0) {
+                                appointment.paymentStatus = "PT3";
+                            } else if (differential > 0) {
+                                appointment.paymentStatus = "PT2";
+                            }
+                            await appointment.save();
+                            break;
+                        case "PM2":
+                            appointment.statusId = "S2";
+                            await appointment.save();
+                            break;
+                        case "PM3":
+                            appointment.statusId = "S2";
+                            await appointment.save();
+                            break;
+                    }
                     resolve({
                         errCode: 0,
                         errMessage: "The patient has confirmed!",

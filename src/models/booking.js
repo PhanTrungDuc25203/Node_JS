@@ -29,6 +29,9 @@ module.exports = (sequelize, DataTypes) => {
             token: DataTypes.STRING,
             examReason: DataTypes.TEXT("long"),
             timeType: DataTypes.STRING,
+            paymentMethod: DataTypes.STRING,
+            paymentStatus: DataTypes.STRING,
+            paidAmount: DataTypes.INTEGER,
         },
         {
             sequelize,
