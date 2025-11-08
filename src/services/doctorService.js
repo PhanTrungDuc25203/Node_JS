@@ -3,6 +3,7 @@ import db from "../models/index";
 import bcrypt from "bcryptjs";
 require("dotenv").config();
 import _ from "lodash";
+import sendPaymentEmailService from "./sendPaymentEmailService";
 import moment from "moment";
 
 const MAX_NUMBER_CAN_RENDEZVOUS_DOCTOR = process.env.MAX_NUMBER_CAN_RENDEZVOUS_DOCTOR;
@@ -388,71 +389,342 @@ let getExtraInforDoctorByIDService = (inputId) => {
 let saveAppointmentHistoryService = (inputData) => {
     return new Promise(async (resolve, reject) => {
         try {
-            // Kiểm tra các tham số bắt buộc
             console.log("Check data: ", inputData);
+
+            // Kiểm tra các tham số bắt buộc
             if (!inputData.appointmentId || !inputData.patientEmail || !inputData.doctorEmail || !inputData.description || !inputData.files || !inputData.appointmentDate || !inputData.appointmentTimeFrame) {
                 resolve({
                     errCode: 1,
                     errMessage: "Missing required parameters!",
                 });
-            } else {
-                let existingHistory = await db.History.findOne({
-                    where: {
-                        patientEmail: inputData.patientEmail,
-                        doctorEmail: inputData.doctorEmail,
+                return;
+            }
+
+            // 🔹 Lấy thông tin booking hiện tại để kiểm tra trạng thái
+            let booking = await db.Booking.findOne({
+                where: { id: inputData.appointmentId },
+                include: [
+                    {
+                        model: db.User,
+                        as: "doctorHasAppointmentWithPatients",
+                        attributes: ["id", "firstName", "lastName", "address", "phoneNumber"],
+                        include: [
+                            {
+                                model: db.Doctor_infor,
+                                attributes: {
+                                    exclude: ["id", "doctorId", "provinceId", "specialtyId", "clinicId", "note", "count"],
+                                },
+                                include: [
+                                    {
+                                        model: db.Allcode,
+                                        as: "priceTypeData",
+                                        attributes: ["value_Eng", "value_Vie"],
+                                    },
+                                ],
+                            },
+                        ],
                     },
-                    order: [["createdAt", "DESC"]],
+                ],
+                raw: false,
+            });
+
+            if (!booking) {
+                resolve({
+                    errCode: 2,
+                    errMessage: "Appointment not found!",
                 });
+                return;
+            }
 
-                if (existingHistory) {
-                    let currentTime = new Date();
-                    let createdTime = new Date(existingHistory.createdAt);
-                    // nếu history mới và cũ cách nhau chưa đầy 1 giờ thì thôi abacut
-                    let timeDifference = (currentTime - createdTime) / (1000 * 60);
+            // 🔹 Cập nhật trạng thái tùy theo type
+            if (inputData.type === "done-confirm") {
+                booking.statusId = "S3";
+                await booking.save();
+            }
 
-                    if (timeDifference < 60) {
-                        resolve({
-                            errCode: 2,
-                            errMessage: "Cannot save history, another record exists within the last hour.",
-                        });
-                        return;
-                    }
-                }
+            if (inputData.type === "cash-confirm") {
+                booking.paymentStatus = "PT3";
+                booking.paidAmount = +booking?.doctorHasAppointmentWithPatients?.Doctor_infor?.priceTypeData?.value_Vie;
+                await booking.save();
+            }
 
-                //chuyển đổi kiểu dữ liệu
-                let fileBuffer = Buffer.from(inputData.files, "base64");
-                let formattedDate = moment(inputData.appointmentDate, "DD-MM-YYYY").format("YYYY-MM-DD 00:00:00");
-                let formettedTimeFrame = await db.Allcode.findOne({
-                    where: {
-                        type: "TIME",
-                        value_Vie: inputData.appointmentTimeFrame,
-                    },
-                    attributes: ["keyMap"],
+            // 🔹 Sau khi update, kiểm tra xem cả 2 điều kiện đã thỏa chưa
+            const { statusId, paymentStatus } = booking;
+
+            if (statusId !== "S3" || paymentStatus !== "PT3") {
+                resolve({
+                    errCode: 3,
+                    errMessage: "Appointment not fully confirmed and paid yet. Skip saving history.",
                 });
-                //lưu dữ liệu history
-                await db.History.create({
-                    appointmentId: inputData.appointmentId,
+                return;
+            }
+
+            // 🔹 Kiểm tra xem có bản ghi history nào gần đây (tránh trùng trong 1h)
+            let existingHistory = await db.History.findOne({
+                where: {
                     patientEmail: inputData.patientEmail,
                     doctorEmail: inputData.doctorEmail,
-                    appointmentDate: formattedDate,
-                    appointmentTimeFrame: formettedTimeFrame.keyMap,
-                    description: inputData.description,
-                    files: fileBuffer,
-                });
+                },
+                order: [["createdAt", "DESC"]],
+            });
 
+            if (existingHistory) {
+                let currentTime = new Date();
+                let createdTime = new Date(existingHistory.createdAt);
+                let timeDifference = (currentTime - createdTime) / (1000 * 60); // phút
+                if (timeDifference < 60) {
+                    resolve({
+                        errCode: 4,
+                        errMessage: "Cannot save history, another record exists within the last hour.",
+                    });
+                    return;
+                }
+            }
+
+            // 🔹 Chuẩn bị dữ liệu để lưu vào bảng History
+            let fileBuffer = Buffer.from(inputData.files, "base64");
+            let formattedDate = moment(inputData.appointmentDate, "DD-MM-YYYY").format("YYYY-MM-DD 00:00:00");
+
+            let formattedTimeFrame = await db.Allcode.findOne({
+                where: {
+                    type: "TIME",
+                    value_Vie: inputData.appointmentTimeFrame,
+                },
+                attributes: ["keyMap"],
+            });
+
+            await db.History.create({
+                appointmentId: inputData.appointmentId,
+                patientEmail: inputData.patientEmail,
+                doctorEmail: inputData.doctorEmail,
+                appointmentDate: formattedDate,
+                appointmentTimeFrame: formattedTimeFrame.keyMap,
+                description: inputData.description,
+                files: fileBuffer,
+            });
+
+            resolve({
+                errCode: 0,
+                errMessage: "Save appointment history successfully!",
+            });
+        } catch (e) {
+            reject(e);
+        }
+    });
+};
+
+let buildUrlPostVisitPaymentPage = (doctorId, token) => {
+    let result = `${process.env.URL_REACT_SERVER}/post-visit-payment?token=${token}&doctorId=${doctorId}`;
+    return result;
+};
+
+let confirmAppointmentDoneService = (data) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!data.appointmentId) {
+                resolve({
+                    errCode: 1,
+                    errMessage: "Missing appointmentId parameters!",
+                });
+            } else {
+                if (data.type === "done-confirm") {
+                    let appointment = await db.Booking.findOne({
+                        where: {
+                            id: data.appointmentId,
+                            statusId: "S2",
+                        },
+                        include: [
+                            {
+                                model: db.Allcode,
+                                as: "appointmentTimeTypeData",
+                                attributes: ["value_Vie", "value_Eng"],
+                            },
+                        ],
+                    });
+
+                    if (appointment) {
+                        appointment.statusId = "S3";
+                        await appointment.save();
+                    }
+                    if (appointment.paymentMethod === "PM2") {
+                        let patientInfo = await db.User.findOne({
+                            where: {
+                                id: appointment.patientId,
+                            },
+                            attributes: {
+                                exclude: ["password", "createdAt", "updatedAt", "address", "gender", "phoneNumber", "image", "roleId", "positionId"],
+                            },
+                        });
+                        let doctorInfo = await db.User.findOne({
+                            where: {
+                                id: appointment.doctorId,
+                            },
+                            include: [
+                                { model: db.Allcode, as: "positionData", attributes: ["value_Eng", "value_Vie"] },
+                                {
+                                    model: db.Doctor_infor,
+                                    attributes: {
+                                        exclude: ["id", "doctorId"],
+                                    },
+                                },
+                            ],
+                        });
+                        let redirectLink = buildUrlPostVisitPaymentPage(appointment.doctorId, appointment.token);
+                        let appointmentMoment = "";
+                        let date = moment(appointment.date).format("DD/MM/YYYY"); // 07/10/2024
+                        let time = appointment.appointmentTimeTypeData.value_Vie; // 14:00 - 15:00 (hoặc value_Eng nếu cần)
+                        appointmentMoment = `${time}, ${date}`;
+                        await sendPaymentEmailService.sendAEmail({
+                            receiverEmail: patientInfo.email,
+                            patientName: patientInfo.lastName + " " + patientInfo.firstName,
+                            time: appointmentMoment,
+                            doctorName: doctorInfo.lastName + " " + doctorInfo.firstName,
+                            clinicAddress: doctorInfo.Doctor_infor.clinicAddress,
+                            language: data.language,
+                            redirectLink: redirectLink,
+                            language: "vi",
+                        });
+                    }
+
+                    resolve({
+                        errCode: 0,
+                        errMessage: "Save appointment history successfully!",
+                    });
+                }
+                if (data.type === "cash-confirm") {
+                    let appointment = await db.Booking.findOne({
+                        where: {
+                            id: data.appointmentId,
+                            statusId: "S2",
+                        },
+                        include: [
+                            {
+                                model: db.User,
+                                as: "doctorHasAppointmentWithPatients",
+                                attributes: ["id", "firstName", "lastName", "address", "phoneNumber"],
+                                include: [
+                                    {
+                                        model: db.Doctor_infor,
+                                        attributes: {
+                                            exclude: ["id", "doctorId", "provinceId", "specialtyId", "clinicId", "note", "count"],
+                                        },
+                                        include: [
+                                            {
+                                                model: db.Allcode,
+                                                as: "priceTypeData",
+                                                attributes: ["value_Eng", "value_Vie"],
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                        ],
+                    });
+
+                    if (appointment) {
+                        appointment.paymentStatus = "PT3";
+                        appointment.paidAmount = +appointment?.doctorHasAppointmentWithPatients?.Doctor_infor?.priceTypeData?.value_Vie;
+                        await appointment.save();
+                    }
+
+                    resolve({
+                        errCode: 0,
+                        errMessage: "Save appointment history successfully!",
+                    });
+                }
+            }
+        } catch (e) {
+            reject(e);
+        }
+    });
+};
+
+let handlePostVisitPaymentMethodService = (data) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            console.log("check data: ", data);
+            if (!data || !data.token || !data.doctorId || !data.paidAmount) {
+                resolve({
+                    errCode: 1,
+                    errMessage: `Missing required parameters: token || doctorId || paidAmount!`,
+                });
+            } else {
                 let booking = await db.Booking.findOne({
-                    where: { id: inputData.appointmentId },
+                    where: { token: data.token },
+                    include: [
+                        {
+                            model: db.User,
+                            as: "doctorHasAppointmentWithPatients",
+                            attributes: ["id", "firstName", "lastName", "address", "phoneNumber", "email"],
+                            include: [
+                                {
+                                    model: db.Doctor_infor,
+                                    attributes: {
+                                        exclude: ["id", "doctorId", "provinceId", "specialtyId", "clinicId", "note", "count"],
+                                    },
+                                    include: [
+                                        {
+                                            model: db.Allcode,
+                                            as: "priceTypeData",
+                                            attributes: ["value_Eng", "value_Vie"],
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                        {
+                            model: db.User,
+                            as: "patientHasAppointmentWithDoctors",
+                            attributes: ["id", "firstName", "lastName", "address", "phoneNumber", "email"],
+                        },
+                    ],
                     raw: false,
                 });
 
                 if (booking) {
-                    booking.statusId = "S3";
+                    booking.paymentStatus = "PT3";
+                    booking.paidAmount = +data.paidAmount / 100;
                     await booking.save();
                 }
+                if (booking.statusId === "S3" && booking.paymentStatus === "PT3") {
+                    // 🔹 Kiểm tra xem có bản ghi history nào gần đây (tránh trùng trong 1h)
+                    let existingHistory = await db.History.findOne({
+                        where: {
+                            appointmentId: booking.id,
+                        },
+                        order: [["createdAt", "DESC"]],
+                    });
 
+                    if (existingHistory) {
+                        let currentTime = new Date();
+                        let createdTime = new Date(existingHistory.createdAt);
+                        let timeDifference = (currentTime - createdTime) / (1000 * 60); // phút
+                        if (timeDifference < 60) {
+                            resolve({
+                                errCode: 4,
+                                errMessage: "Cannot save history, another record exists within the last hour.",
+                            });
+                            return;
+                        }
+                    }
+
+                    // 🔹 Chuẩn bị dữ liệu để lưu vào bảng History
+                    // let fileBuffer = Buffer.from(inputData.files, "base64");
+                    let formattedDate = moment(booking.date, "DD-MM-YYYY").format("YYYY-MM-DD 00:00:00");
+
+                    await db.History.create({
+                        appointmentId: booking.id,
+                        patientEmail: booking.patientHasAppointmentWithDoctors.email,
+                        doctorEmail: booking.doctorHasAppointmentWithPatients.email,
+                        appointmentDate: formattedDate,
+                        appointmentTimeFrame: booking.timeType,
+                        description: "S3", //hardcode
+                        files: "", //hardcode
+                    });
+                }
                 resolve({
                     errCode: 0,
-                    errMessage: "Save appointment history successfully!",
+                    errMessage: "Get appointment histories successfully!",
                 });
             }
         } catch (e) {
@@ -503,5 +775,7 @@ module.exports = {
     getScheduleByDateService: getScheduleByDateService,
     getExtraInforDoctorByIDService: getExtraInforDoctorByIDService,
     saveAppointmentHistoryService: saveAppointmentHistoryService,
+    confirmAppointmentDoneService: confirmAppointmentDoneService,
     getAppointmentHistoriesByDoctorEmailService: getAppointmentHistoriesByDoctorEmailService,
+    handlePostVisitPaymentMethodService: handlePostVisitPaymentMethodService,
 };

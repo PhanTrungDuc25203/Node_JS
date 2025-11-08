@@ -99,8 +99,17 @@ let getExtraInforDoctorByID = async (req, res) => {
 
 let saveAppointmentHistory = async (req, res) => {
     try {
-        let infor = await doctorService.saveAppointmentHistoryService(req.body);
-        return res.status(200).json(infor);
+        if (req.body.paymentStatus === "PT1" && req.body.statusId === "S2") {
+            let result = await doctorService.confirmAppointmentDoneService(req.body);
+            return res.status(200).json({
+                errCode: 0,
+                errMessage: "Confirm appointment successfully!",
+                data: result,
+            });
+        } else {
+            let infor = await doctorService.saveAppointmentHistoryService(req.body);
+            return res.status(200).json(infor);
+        }
     } catch (e) {
         console.log(e);
         return res.status(200).json({
@@ -124,6 +133,19 @@ let getAppointmentHistoriesByDoctorEmail = async (req, res) => {
     }
 };
 
+let handlePostVisitPaymentMethod = async (req, res) => {
+    try {
+        let result = await doctorService.handlePostVisitPaymentMethodService(req.body);
+        return res.status(200).json(result);
+    } catch (e) {
+        console.log(e);
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: "Handle post-visit payment error from server!",
+        });
+    }
+};
+
 module.exports = {
     getEliteDoctorForHomePage: getEliteDoctorForHomePage,
     getAllDoctorsForDoctorArticlePage: getAllDoctorsForDoctorArticlePage,
@@ -134,4 +156,5 @@ module.exports = {
     getExtraInforDoctorByID: getExtraInforDoctorByID,
     saveAppointmentHistory: saveAppointmentHistory,
     getAppointmentHistoriesByDoctorEmail: getAppointmentHistoriesByDoctorEmail,
+    handlePostVisitPaymentMethod: handlePostVisitPaymentMethod,
 };

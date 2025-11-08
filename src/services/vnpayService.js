@@ -96,10 +96,12 @@ let createVnpayPaymentUrlService = (req) => {
             // }
 
             // Tạo url thanh toán
+
+            const returnUrl = appointmentInfo.paymentMethod === "PM2" ? `${process.env.VNP_RETURNURL_POST_VISIT_PAYMENT}?token=${req.body.token}&doctorId=${req.body.doctorId}` : `${process.env.VNP_RETURNURL}?token=${req.body.token}&doctorId=${req.body.doctorId}`;
             const paymentUrl = await vnpay.buildPaymentUrl({
                 vnp_Amount: amountToBePaid,
                 vnp_IpAddr: ipAddr,
-                vnp_ReturnUrl: `${process.env.VNP_RETURNURL}?token=${req.body.token}&doctorId=${req.body.doctorId}`,
+                vnp_ReturnUrl: returnUrl,
                 vnp_TxnRef: `TXN${Date.now()}`,
                 vnp_OrderInfo: "Thanh toán dịch vụ khám bệnh", //hardcode
             });
