@@ -553,7 +553,7 @@ let getAllRelativeBookingsOfCurrentSystemUserService = (currentUserEmail, appoin
                     {
                         model: db.Booking,
                         as: "doctorHasAppointmentWithPatients",
-                        attributes: ["id", "statusId", "timeType", "doctorId", "patientId", "date", "patientPhoneNumber", "patientAddress", "patientBirthday", "patientGender", "examReason", "paymentMethod", "paymentStatus", "paidAmount"],
+                        attributes: ["id", "statusId", "timeType", "doctorId", "patientId", "date", "patientPhoneNumber", "patientAddress", "patientBirthday", "patientGender", "examReason", "paymentMethod", "paymentStatus", "paidAmount", "files"],
                         include: [
                             {
                                 model: db.Allcode,
@@ -565,7 +565,7 @@ let getAllRelativeBookingsOfCurrentSystemUserService = (currentUserEmail, appoin
                     {
                         model: db.Booking,
                         as: "patientHasAppointmentWithDoctors",
-                        attributes: ["id", "statusId", "timeType", "doctorId", "patientId", "date", "patientPhoneNumber", "patientAddress", "patientBirthday", "patientGender", "paymentMethod", "paymentStatus", "paidAmount"],
+                        attributes: ["id", "statusId", "timeType", "doctorId", "patientId", "date", "patientPhoneNumber", "patientAddress", "patientBirthday", "patientGender", "paymentMethod", "paymentStatus", "paidAmount", "files"],
                         include: [
                             {
                                 model: db.Allcode,
@@ -582,7 +582,7 @@ let getAllRelativeBookingsOfCurrentSystemUserService = (currentUserEmail, appoin
                     {
                         model: db.Booking,
                         as: "doctorHasAppointmentWithPatients",
-                        attributes: ["id", "statusId", "timeType", "doctorId", "patientId", "date", "patientPhoneNumber", "patientAddress", "patientBirthday", "patientGender", "examReason", "paymentMethod", "paymentStatus", "paidAmount"],
+                        attributes: ["id", "statusId", "timeType", "doctorId", "patientId", "date", "patientPhoneNumber", "patientAddress", "patientBirthday", "patientGender", "examReason", "paymentMethod", "paymentStatus", "paidAmount", "files"],
                         include: [
                             {
                                 model: db.Allcode,
@@ -599,7 +599,7 @@ let getAllRelativeBookingsOfCurrentSystemUserService = (currentUserEmail, appoin
                     {
                         model: db.Booking,
                         as: "patientHasAppointmentWithDoctors",
-                        attributes: ["id", "statusId", "timeType", "doctorId", "patientId", "date", "patientPhoneNumber", "patientAddress", "patientBirthday", "patientGender", "paymentMethod", "paymentStatus", "paidAmount"],
+                        attributes: ["id", "statusId", "timeType", "doctorId", "patientId", "date", "patientPhoneNumber", "patientAddress", "patientBirthday", "patientGender", "paymentMethod", "paymentStatus", "paidAmount", "files"],
                         include: [
                             {
                                 model: db.Allcode,

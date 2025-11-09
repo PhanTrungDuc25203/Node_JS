@@ -32,6 +32,7 @@ module.exports = (sequelize, DataTypes) => {
             paymentMethod: DataTypes.STRING,
             paymentStatus: DataTypes.STRING,
             paidAmount: DataTypes.INTEGER,
+            files: DataTypes.TEXT,
         },
         {
             sequelize,

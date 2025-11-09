@@ -205,23 +205,53 @@ let getAppointmentHistoriesByPatientEmailService = (inputPatientEmail) => {
                     errMessage: `Missing required parameters: patient's email!`,
                 });
             } else {
-                let data = await db.History.findAll({
-                    where: { patientEmail: inputPatientEmail },
-                    attributes: {
-                        exclude: ["createdAt", "updatedAt"],
+                let user = await db.User.findOne({
+                    where: {
+                        email: inputPatientEmail,
                     },
-                    include: [{ model: db.Allcode, as: "appointmentTimeFrameData", attributes: ["value_Eng", "value_Vie"] }],
-                    raw: false,
+                    attributes: {
+                        exclude: ["createdAt", "updatedAt", "image"],
+                    },
                 });
-                if (!data) {
-                    data = {};
-                }
+                if (user) {
+                    let data = await db.Booking.findAll({
+                        where: {
+                            patientId: user.id,
+                            statusId: "S3",
+                            paymentStatus: "PT3",
+                        },
+                        include: [
+                            {
+                                model: db.Allcode,
+                                as: "appointmentTimeTypeData",
+                                attributes: ["value_Vie", "value_Eng"],
+                            },
+                            {
+                                model: db.User,
+                                as: "doctorHasAppointmentWithPatients",
+                                attributes: ["id", "firstName", "lastName", "address", "phoneNumber", "email"],
+                            },
+                        ],
+                        attributes: {
+                            exclude: ["createdAt", "updatedAt"],
+                        },
+                        raw: false,
+                    });
+                    if (!data) {
+                        data = {};
+                    }
 
-                resolve({
-                    data: data,
-                    errCode: 0,
-                    errMessage: "Get appointment histories successfully!",
-                });
+                    resolve({
+                        data: data,
+                        errCode: 0,
+                        errMessage: "Get appointment histories successfully!",
+                    });
+                } else {
+                    resolve({
+                        errCode: 1,
+                        errMessage: "User not found!",
+                    });
+                }
             }
         } catch (e) {
             reject(e);

@@ -98,6 +98,8 @@ let initWebRoutes = (app) => {
     router.post("/api/create_payment_url", paymentController.createVnpayPaymentUrl);
     //xử lý trường hợp người dùng thanh toán trực tuyến sau khi khám
     router.post("/api/handle-post-visit-payment-method", doctorController.handlePostVisitPaymentMethod);
+    //lưu bệnh án
+    router.post("/api/save-clinical-report-content-to-database", doctorController.saveClinicalReportContentToDatabase);
 
     return app.use("/", router);
 };

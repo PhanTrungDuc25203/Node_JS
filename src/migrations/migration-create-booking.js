@@ -54,6 +54,9 @@ module.exports = {
             paidAmount: {
                 type: Sequelize.INTEGER,
             },
+            files: {
+                type: Sequelize.BLOB("long"),
+            },
 
             createdAt: {
                 allowNull: false,

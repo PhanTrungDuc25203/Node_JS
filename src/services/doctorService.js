@@ -439,69 +439,22 @@ let saveAppointmentHistoryService = (inputData) => {
             // 🔹 Cập nhật trạng thái tùy theo type
             if (inputData.type === "done-confirm") {
                 booking.statusId = "S3";
+                if (inputData.files) {
+                    let fileBuffer = Buffer.from(inputData.files, "base64");
+                    booking.files = fileBuffer;
+                }
                 await booking.save();
             }
 
             if (inputData.type === "cash-confirm") {
                 booking.paymentStatus = "PT3";
                 booking.paidAmount = +booking?.doctorHasAppointmentWithPatients?.Doctor_infor?.priceTypeData?.value_Vie;
+                if (inputData.files) {
+                    let fileBuffer = Buffer.from(inputData.files, "base64");
+                    booking.files = fileBuffer;
+                }
                 await booking.save();
             }
-
-            // 🔹 Sau khi update, kiểm tra xem cả 2 điều kiện đã thỏa chưa
-            const { statusId, paymentStatus } = booking;
-
-            if (statusId !== "S3" || paymentStatus !== "PT3") {
-                resolve({
-                    errCode: 3,
-                    errMessage: "Appointment not fully confirmed and paid yet. Skip saving history.",
-                });
-                return;
-            }
-
-            // 🔹 Kiểm tra xem có bản ghi history nào gần đây (tránh trùng trong 1h)
-            let existingHistory = await db.History.findOne({
-                where: {
-                    patientEmail: inputData.patientEmail,
-                    doctorEmail: inputData.doctorEmail,
-                },
-                order: [["createdAt", "DESC"]],
-            });
-
-            if (existingHistory) {
-                let currentTime = new Date();
-                let createdTime = new Date(existingHistory.createdAt);
-                let timeDifference = (currentTime - createdTime) / (1000 * 60); // phút
-                if (timeDifference < 60) {
-                    resolve({
-                        errCode: 4,
-                        errMessage: "Cannot save history, another record exists within the last hour.",
-                    });
-                    return;
-                }
-            }
-
-            // 🔹 Chuẩn bị dữ liệu để lưu vào bảng History
-            let fileBuffer = Buffer.from(inputData.files, "base64");
-            let formattedDate = moment(inputData.appointmentDate, "DD-MM-YYYY").format("YYYY-MM-DD 00:00:00");
-
-            let formattedTimeFrame = await db.Allcode.findOne({
-                where: {
-                    type: "TIME",
-                    value_Vie: inputData.appointmentTimeFrame,
-                },
-                attributes: ["keyMap"],
-            });
-
-            await db.History.create({
-                appointmentId: inputData.appointmentId,
-                patientEmail: inputData.patientEmail,
-                doctorEmail: inputData.doctorEmail,
-                appointmentDate: formattedDate,
-                appointmentTimeFrame: formattedTimeFrame.keyMap,
-                description: inputData.description,
-                files: fileBuffer,
-            });
 
             resolve({
                 errCode: 0,
@@ -544,6 +497,10 @@ let confirmAppointmentDoneService = (data) => {
 
                     if (appointment) {
                         appointment.statusId = "S3";
+                        if (data.files) {
+                            let fileBuffer = Buffer.from(data.files, "base64");
+                            appointment.files = fileBuffer;
+                        }
                         await appointment.save();
                     }
                     if (appointment.paymentMethod === "PM2") {
@@ -686,42 +643,7 @@ let handlePostVisitPaymentMethodService = (data) => {
                     booking.paidAmount = +data.paidAmount / 100;
                     await booking.save();
                 }
-                if (booking.statusId === "S3" && booking.paymentStatus === "PT3") {
-                    // 🔹 Kiểm tra xem có bản ghi history nào gần đây (tránh trùng trong 1h)
-                    let existingHistory = await db.History.findOne({
-                        where: {
-                            appointmentId: booking.id,
-                        },
-                        order: [["createdAt", "DESC"]],
-                    });
 
-                    if (existingHistory) {
-                        let currentTime = new Date();
-                        let createdTime = new Date(existingHistory.createdAt);
-                        let timeDifference = (currentTime - createdTime) / (1000 * 60); // phút
-                        if (timeDifference < 60) {
-                            resolve({
-                                errCode: 4,
-                                errMessage: "Cannot save history, another record exists within the last hour.",
-                            });
-                            return;
-                        }
-                    }
-
-                    // 🔹 Chuẩn bị dữ liệu để lưu vào bảng History
-                    // let fileBuffer = Buffer.from(inputData.files, "base64");
-                    let formattedDate = moment(booking.date, "DD-MM-YYYY").format("YYYY-MM-DD 00:00:00");
-
-                    await db.History.create({
-                        appointmentId: booking.id,
-                        patientEmail: booking.patientHasAppointmentWithDoctors.email,
-                        doctorEmail: booking.doctorHasAppointmentWithPatients.email,
-                        appointmentDate: formattedDate,
-                        appointmentTimeFrame: booking.timeType,
-                        description: "S3", //hardcode
-                        files: "", //hardcode
-                    });
-                }
                 resolve({
                     errCode: 0,
                     errMessage: "Get appointment histories successfully!",
@@ -742,26 +664,92 @@ let getAppointmentHistoriesByDoctorEmailService = (inputDoctorEmail) => {
                     errMessage: `Missing required parameters: doctor's email!`,
                 });
             } else {
-                let data = await db.History.findAll({
-                    where: { doctorEmail: inputDoctorEmail },
-                    attributes: {
-                        exclude: ["createdAt", "updatedAt", "id"],
+                let user = await db.User.findOne({
+                    where: {
+                        email: inputDoctorEmail,
                     },
-                    include: [{ model: db.Allcode, as: "appointmentTimeFrameData", attributes: ["value_Eng", "value_Vie"] }],
-                    raw: false,
+                    attributes: {
+                        exclude: ["createdAt", "updatedAt", "image"],
+                    },
                 });
-                if (!data) {
-                    data = {};
-                }
+                if (user) {
+                    let data = await db.Booking.findAll({
+                        where: {
+                            doctorId: user.id,
+                            statusId: "S3",
+                            paymentStatus: "PT3",
+                        },
+                        include: [
+                            {
+                                model: db.Allcode,
+                                as: "appointmentTimeTypeData",
+                                attributes: ["value_Vie", "value_Eng"],
+                            },
+                            {
+                                model: db.User,
+                                as: "patientHasAppointmentWithDoctors",
+                                attributes: ["id", "firstName", "lastName", "address", "phoneNumber", "email"],
+                            },
+                        ],
+                        attributes: {
+                            exclude: ["createdAt", "updatedAt"],
+                        },
+                        raw: false,
+                    });
+                    if (!data) {
+                        data = {};
+                    }
 
-                resolve({
-                    data: data,
-                    errCode: 0,
-                    errMessage: "Get appointment histories successfully!",
-                });
+                    resolve({
+                        data: data,
+                        errCode: 0,
+                        errMessage: "Get appointment histories successfully!",
+                    });
+                } else {
+                    resolve({
+                        errCode: 1,
+                        errMessage: "User not found!",
+                    });
+                }
             }
         } catch (e) {
             reject(e);
+        }
+    });
+};
+
+let saveClinicalReportContentToDatabaseService = (data) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const { base64File, appointmentId } = data; // ✅ bóc dữ liệu ra
+
+            if (!base64File || !appointmentId) {
+                return resolve({
+                    errCode: 1,
+                    errMessage: "Missing required parameters!",
+                });
+            }
+
+            // 🔹 Mã hóa base64 -> Buffer để lưu vào BLOB
+            const fileBuffer = Buffer.from(base64File, "base64");
+
+            // 🔹 Cập nhật DB
+            const [updated] = await db.Booking.update({ files: fileBuffer }, { where: { id: appointmentId } });
+
+            if (updated === 0) {
+                return resolve({
+                    errCode: 2,
+                    errMessage: "Appointment not found!",
+                });
+            }
+
+            return resolve({
+                errCode: 0,
+                errMessage: "File saved successfully!",
+            });
+        } catch (e) {
+            console.error("❌ Service error:", e);
+            return reject(e);
         }
     });
 };
@@ -778,4 +766,5 @@ module.exports = {
     confirmAppointmentDoneService: confirmAppointmentDoneService,
     getAppointmentHistoriesByDoctorEmailService: getAppointmentHistoriesByDoctorEmailService,
     handlePostVisitPaymentMethodService: handlePostVisitPaymentMethodService,
+    saveClinicalReportContentToDatabaseService: saveClinicalReportContentToDatabaseService,
 };

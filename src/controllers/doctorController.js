@@ -146,6 +146,19 @@ let handlePostVisitPaymentMethod = async (req, res) => {
     }
 };
 
+let saveClinicalReportContentToDatabase = async (req, res) => {
+    try {
+        let response = await doctorService.saveClinicalReportContentToDatabaseService(req.body);
+        return res.status(200).json(response);
+    } catch (e) {
+        console.log(e);
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: "Handle post-visit payment error from server!",
+        });
+    }
+};
+
 module.exports = {
     getEliteDoctorForHomePage: getEliteDoctorForHomePage,
     getAllDoctorsForDoctorArticlePage: getAllDoctorsForDoctorArticlePage,
@@ -157,4 +170,5 @@ module.exports = {
     saveAppointmentHistory: saveAppointmentHistory,
     getAppointmentHistoriesByDoctorEmail: getAppointmentHistoriesByDoctorEmail,
     handlePostVisitPaymentMethod: handlePostVisitPaymentMethod,
+    saveClinicalReportContentToDatabase: saveClinicalReportContentToDatabase,
 };
