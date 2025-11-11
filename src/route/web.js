@@ -8,6 +8,7 @@ import specialtyController from "../controllers/specialtyController";
 import medicalFacilityController from "../controllers/medicalFacilityController";
 import searchController from "../controllers/searchController";
 import paymentController from "../controllers/paymentController";
+import googleController from "../controllers/googleController";
 
 let router = express.Router();
 
@@ -24,6 +25,7 @@ let initWebRoutes = (app) => {
 
     //những gì ở phía React thì phân biệt bằng các thêm tiền tố /api/ vào trước các route
     router.post("/api/login", userController.handleLogin);
+    router.post("/api/auth/google/verify", googleController.handleGoogleLogin);
     //viết link api lất tất cả người dùng ra cho react
     router.get("/api/get-all-users-for-react", userController.handleGetAllUsersForReact);
     router.post("/api/create-new-user-in-react", authMiddleware, authorizeRoles("R1"), userController.handleCreateNewUserInReact);
