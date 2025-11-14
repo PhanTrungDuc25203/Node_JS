@@ -13,41 +13,38 @@ const jwt = require("jsonwebtoken");
 //mã trạng thái 5xx: lỗi từ phía server
 
 let handleLogin = async (req, res) => {
-    let email = req.body.email;
-    let password = req.body.password;
+    try {
+        let { email, password } = req.body;
 
-    if (!email || !password) {
-        return res.status(500).json({
-            errCode: 1,
-            message: "Missing inputs parameter!",
+        if (!email || !password) {
+            return res.status(400).json({
+                errCode: 1,
+                message: "Missing inputs parameter!",
+            });
+        }
+
+        let result = await userService.handleUserLogin(email, password);
+
+        res.cookie("refreshToken", result.refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production", // true khi deploy HTTPS
+            sameSite: "Strict",
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày
         });
-    }
 
-    let userData = await userService.handleUserLogin(email, password);
-    if (userData && userData.errCode === 0) {
-        const token = jwt.sign(
-            {
-                id: userData.user.id,
-                email: userData.user.email,
-                role: userData.user.roleId,
-            },
-            process.env.JWT_SECRET || "piscean_secret_key",
-            { expiresIn: "2h" } 
-        );
-
+        // ✅ Trả về đúng format FE đang dùng
         return res.status(200).json({
             errCode: 0,
-            message: "Login successful",
-            user: userData.user,
-            token: token,
+            message: result.message,
+            user: result.user,
+            accessToken: result.accessToken,
+        });
+    } catch (error) {
+        console.error("Login error:", error);
+        return res.status(500).json({
+            message: "Server error",
         });
     }
-
-    return res.status(200).json({
-        errCode: userData.errCode,
-        message: userData.errMessage,
-        user: userData.user ? userData.user : {},
-    });
 };
 
 let handleGetAllUsersForReact = async (req, res) => {

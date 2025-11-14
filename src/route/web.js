@@ -9,6 +9,7 @@ import medicalFacilityController from "../controllers/medicalFacilityController"
 import searchController from "../controllers/searchController";
 import paymentController from "../controllers/paymentController";
 import googleController from "../controllers/googleController";
+import jwtController from "../controllers/jwtController";
 
 let router = express.Router();
 
@@ -26,6 +27,7 @@ let initWebRoutes = (app) => {
     //những gì ở phía React thì phân biệt bằng các thêm tiền tố /api/ vào trước các route
     router.post("/api/login", userController.handleLogin);
     router.post("/api/auth/google/verify", googleController.handleGoogleLogin);
+    router.post("/api/refresh-token", jwtController.handleRefreshToken);
     //viết link api lất tất cả người dùng ra cho react
     router.get("/api/get-all-users-for-react", userController.handleGetAllUsersForReact);
     router.post("/api/create-new-user-in-react", authMiddleware, authorizeRoles("R1"), userController.handleCreateNewUserInReact);
@@ -43,7 +45,7 @@ let initWebRoutes = (app) => {
     //lấy thông tin map từ 2 bảng user và markdown với key=doctorId để hiển thị thông tin bác sĩ
     router.get("/api/get-a-particular-doctor-infor-for-his-or-her-page", doctorController.getParticularInforForDoctorPage);
     //tạo một schedule cho 1 bac sĩ, một schedule có nhiều timeframe
-    router.post("/api/bulk-create-timeframes-for-doctor-appointment-schedule", doctorController.createTimeframesForDoctorSchedule);
+    router.post("/api/bulk-create-timeframes-for-doctor-appointment-schedule", authMiddleware, authorizeRoles("R2"), doctorController.createTimeframesForDoctorSchedule);
     //lấy khung giờ khám cho từng ngày của một bác sĩ
     router.get("/api/get-doctor-schedule-by-date", doctorController.getScheduleByDate);
     //lấy thêm thông tin bác sĩ như địa chỉ phòng khám, giá khám, phương thức thanh toán
@@ -52,7 +54,7 @@ let initWebRoutes = (app) => {
     router.get("/api/all-medical-services-filter-search", searchController.allMedicalServiceFilterSearch);
 
     //lưu bệnh nhân và thông tin đặt lịch khám với bác sĩ
-    router.post("/api/patient-infor-when-booking-time", patientController.patientInforWhenBookingTime);
+    router.post("/api/patient-infor-when-booking-time", authMiddleware, authorizeRoles("R3"), patientController.patientInforWhenBookingTime);
     router.post("/api/patient-infor-when-booking-exam-package", medicalFacilityController.patientInforWhenBookingExamPackage);
     //trang web xác nhận chốt đặt lịch
     router.post("/api/confirm-booking-appointment", patientController.confirmBookingAppointment);

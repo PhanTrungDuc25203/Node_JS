@@ -11,6 +11,7 @@ import helmet from "helmet"; // for security
 import compression from "compression"; // for response size optimization
 import morgan from "morgan"; // for logging
 import initChatRoutes from "./route/chatRoute";
+import cookieParser from "cookie-parser";
 
 require("dotenv").config();
 // câu lệnh trên có thể gọi tới hàm config của thư viện dotenv và giúp
@@ -50,6 +51,7 @@ app.use(function (req, res, next) {
 // app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
+app.use(cookieParser());
 
 viewEngine(app);
 initWebRoutes(app);

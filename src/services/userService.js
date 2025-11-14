@@ -4,6 +4,7 @@ import db from "../models/index";
 //nên cần thư viện ở dưới
 import bcrypt from "bcryptjs";
 import moment from "moment";
+import { generateAccessToken, generateRefreshToken, saveRefreshToken } from "./jwtService";
 
 const salt = bcrypt.genSaltSync(10);
 
@@ -21,56 +22,47 @@ let hashUserPassword = (password) => {
 let handleUserLogin = (email, password) => {
     return new Promise(async (resolve, reject) => {
         try {
-            let userData = {};
-            let isExist = await checkUserEmail(email);
-            if (isExist) {
-                //có tồn taị người dùng
-                //sau đó cần so sánh password xem có giống nhau không mới cho đăng nhập
-                let user = await db.User.findOne({
-                    attributes: ["email", "roleId", "password", "firstName", "lastName"],
-                    where: { email: email },
-                    //chỉ lấy ra một số trường thuộc tính cần thiết của User
-                    //không nên lấy hết vì lộ thông tin
-                    //nhưng vì nếu bỏ pass thì ko check đc pass nên vẫn lấy:))
+            let user = await db.User.findOne({
+                where: { email: email },
+            });
 
-                    //trả lại dữ liệu raw vì thế thì câu lệnh xóa một thuộc tính
-                    //của đối tượng mới hoạt động
-                    raw: true,
+            if (!user) {
+                resolve({
+                    errCode: 1,
+                    message: "User not found",
                 });
-                //tại sao ta vẫn cần phải check người dùng có tồn tại hay không một
-                //lần nữa tại đây?
-                //vì web là chương trình cần chứ ý tới phiên hoạt động, có thể khi người
-                //dùng này gửi request rồi, chương trình đã chạy xong câu lệnh check thứ
-                //nhất bên trên rồi nhưng chưa kịp chạy câu lệnh check thứ 2 ngay sau đây
-                //nên người dùng sẽ bị từ chối, hơn nữa việc người dùng nhập email và pass
-                //thực sự có một khoảng thời gian trống lớn
-                //vậy nên ta cần check một lần nữa tại đây
-                if (user) {
-                    let check = await bcrypt.compareSync(password, user.password);
-                    if (check) {
-                        userData.errCode = 0;
-                        userData.errMessage = "Login succesfully";
-                        //vì giải thích ở trên nói vẫn lấy pass nên ở đây nên xóa thuộc tính pass
-                        //của đối tượng user đi rồi mới trả về cho userData
-
-                        //trước khi sử dụng câu lệnh này thì nên lấy dữ liệu ở dạng raw
-                        delete user.password;
-                        userData.user = user;
-                    } else {
-                        userData.errCode = 2;
-                        userData.errMessage = "Wrong pasword";
-                    }
-                } else {
-                    userData.errCode = 1;
-                    userData.errMessage = `User not found`;
-                }
             } else {
-                userData.errCode = 1;
-                userData.errMessage = `User not found`;
+                let checkPassword = bcrypt.compareSync(password, user.password);
+                if (!checkPassword) {
+                    resolve({
+                        errCode: 2,
+                        message: "Incorrect password",
+                    });
+                } else {
+                    // ✅ Generate tokens
+                    const accessToken = generateAccessToken(user);
+                    const refreshToken = generateRefreshToken(user);
+
+                    // ✅ Save refresh token
+                    await saveRefreshToken(user.id, refreshToken);
+
+                    // ✅ Trả về format cũ frontend đang dùng
+                    resolve({
+                        errCode: 0,
+                        message: "Login successful",
+                        user: {
+                            email: user.email,
+                            roleId: user.roleId,
+                            firstName: user.firstName,
+                            lastName: user.lastName,
+                        },
+                        accessToken, // access token
+                        refreshToken, // có thể ẩn nếu chưa cần FE dùng
+                    });
+                }
             }
-            resolve(userData);
-        } catch (e) {
-            reject(e);
+        } catch (error) {
+            reject(error);
         }
     });
 };
