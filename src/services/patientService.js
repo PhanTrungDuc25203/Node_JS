@@ -18,102 +18,138 @@ let buildUrlPaymentPage = (doctorId, token) => {
     return result;
 };
 
-let patientInforWhenBookingTimeService = (data) => {
-    return new Promise(async (resolve, reject) => {
-        try {
-            if (!data.email || !data.doctorId || !data.timeType || !data.date || !data.fullname || !data.appointmentMoment || !data.phoneNumber) {
-                resolve({
-                    errCode: 1,
-                    errMessage: `Missing parameter(s)!`,
-                });
-            } else {
-                let doctorInfor = await db.User.findOne({
-                    where: { id: data.doctorId },
-                    attributes: {
-                        exclude: ["id", "email", "password", "address", "phoneNumber", "roleId", "positionId"],
-                    },
-                    include: [
-                        {
-                            model: db.Doctor_infor,
-                            attributes: ["clinicName", "clinicAddress"],
-                        },
-                    ],
-                    raw: false,
-                });
-
-                let token = uuidv4();
-
-                // ✅ Xác định link redirect dựa trên phương thức thanh toán
-                let redirectLink = data.selectedPaymentMethod === "PM1" ? buildUrlPaymentPage(data.doctorId, token) : buildUrlConfirmMedicalRecord(data.doctorId, token);
-
-                // ✅ Gửi email
-                await sendConfirmBookingEmailService.sendAEmail({
-                    receiverEmail: data.email,
-                    patientName: data.fullname,
-                    time: data.appointmentMoment,
-                    doctorName: doctorInfor.lastName + " " + doctorInfor.firstName,
-                    clinicName: doctorInfor.Doctor_infor.clinicName,
-                    clinicAddress: doctorInfor.Doctor_infor.clinicAddress,
-                    language: data.language,
-                    redirectLink: redirectLink,
-                    isPayment: data.selectedPaymentMethod === "PM1" ? true : false,
-                });
-
-                // ✅ Xử lý họ tên
-                let fullName = data.fullname.trim();
-                let lastSpaceIndex = fullName.lastIndexOf(" ");
-                let firstName = lastSpaceIndex === -1 ? fullName : fullName.slice(lastSpaceIndex + 1);
-                let lastName = lastSpaceIndex === -1 ? "" : fullName.slice(0, lastSpaceIndex);
-
-                let patient = await db.User.findOrCreate({
-                    where: { email: data.email },
-                    defaults: {
-                        email: data.email,
-                        lastName: lastName,
-                        firstName: firstName,
-                        phoneNumber: data.phoneNumber,
-                        address: data.address,
-                        gender: data.selectedGender,
-                        roleId: "R3",
-                    },
-                });
-
-                // ✅ Lưu bản ghi booking
-                if (patient && patient[0]) {
-                    await db.Booking.findOrCreate({
-                        where: {
-                            patientId: patient[0].id,
-                            doctorId: data.doctorId,
-                            statusId: { [db.Sequelize.Op.ne]: "S3" },
-                        },
-                        defaults: {
-                            statusId: "S1",
-                            doctorId: data.doctorId,
-                            patientId: patient[0].id,
-                            date: data.date,
-                            timeType: data.timeType,
-                            patientPhoneNumber: data.phoneNumber,
-                            patientBirthday: data.birthday,
-                            patientAddress: data.address,
-                            patientGender: data.selectedGender,
-                            examReason: data.reason,
-                            paymentMethod: data.selectedPaymentMethod || "PM3",
-                            paymentStatus: "PT1",
-                            paidAmount: 0,
-                            token: token,
-                        },
-                    });
-                }
-
-                resolve({
-                    errCode: 0,
-                    errMessage: `Save patient's information successfully!`,
-                });
-            }
-        } catch (e) {
-            reject(e);
+let patientInforWhenBookingTimeService = async (data) => {
+    try {
+        // ===== 1. Check missing parameters =====
+        if (!data.email || !data.doctorId || !data.timeType || !data.date || !data.fullname || !data.appointmentMoment) {
+            return {
+                errCode: 1,
+                errMessage: `Missing parameter(s)!`,
+            };
         }
-    });
+
+        // ===== 2. Kiểm tra xung đột lịch hẹn =====
+
+        // Check ❶: Người dùng đã có lịch với chính bác sĩ này cùng ngày
+        let conflictSameDoctor = await db.Booking.findOne({
+            where: {
+                patientId: db.Sequelize.literal(`
+                    (SELECT id FROM Users WHERE email = '${data.email}')
+                `),
+                doctorId: data.doctorId,
+                date: data.date, // ngày giống nhau
+                statusId: { [db.Sequelize.Op.ne]: "S3" }, // không tính lịch đã xong
+            },
+        });
+
+        if (conflictSameDoctor) {
+            return {
+                errCode: 2,
+                errMessage: `Bạn đã có lịch hẹn với bác sĩ này trong ngày này rồi!`,
+            };
+        }
+
+        // Check ❷: Người dùng đã đặt lịch cùng timeType + cùng ngày nhưng với bác sĩ khác
+        let conflictSameTime = await db.Booking.findOne({
+            where: {
+                patientId: db.Sequelize.literal(`
+                    (SELECT id FROM Users WHERE email = '${data.email}')
+                `),
+                doctorId: { [db.Sequelize.Op.ne]: data.doctorId },
+                date: data.date,
+                timeType: data.timeType,
+                statusId: { [db.Sequelize.Op.ne]: "S3" },
+            },
+        });
+
+        if (conflictSameTime) {
+            return {
+                errCode: 3,
+                errMessage: `Bạn đã có lịch hẹn khác trong cùng thời điểm này rồi!`,
+            };
+        }
+
+        // ===== 3. Lấy thông tin bác sĩ =====
+        let doctorInfor = await db.User.findOne({
+            where: { id: data.doctorId },
+            attributes: {
+                exclude: ["id", "email", "password", "address", "phoneNumber", "roleId", "positionId"],
+            },
+            include: [
+                {
+                    model: db.Doctor_infor,
+                    attributes: ["clinicName", "clinicAddress"],
+                },
+            ],
+            raw: false,
+        });
+
+        let token = uuidv4();
+
+        // ===== 4. Build redirect link =====
+        let redirectLink = data.selectedPaymentMethod === "PM1" ? buildUrlPaymentPage(data.doctorId, token) : buildUrlConfirmMedicalRecord(data.doctorId, token);
+
+        // ===== 5. Send email =====
+        await sendConfirmBookingEmailService.sendAEmail({
+            receiverEmail: data.email,
+            patientName: data.fullname,
+            time: data.appointmentMoment,
+            doctorName: doctorInfor.lastName + " " + doctorInfor.firstName,
+            clinicName: doctorInfor.Doctor_infor.clinicName,
+            clinicAddress: doctorInfor.Doctor_infor.clinicAddress,
+            language: data.language,
+            redirectLink: redirectLink,
+            isPayment: data.selectedPaymentMethod === "PM1",
+        });
+
+        // ===== 6. Tách họ tên =====
+        let fullName = data.fullname.trim();
+        let lastSpaceIndex = fullName.lastIndexOf(" ");
+        let firstName = lastSpaceIndex === -1 ? fullName : fullName.slice(lastSpaceIndex + 1);
+        let lastName = lastSpaceIndex === -1 ? "" : fullName.slice(0, lastSpaceIndex);
+
+        // ===== 7. Tạo bệnh nhân nếu chưa có =====
+        let [patient] = await db.User.findOrCreate({
+            where: { email: data.email },
+            defaults: {
+                email: data.email,
+                lastName: lastName,
+                firstName: firstName,
+                phoneNumber: data.phoneNumber,
+                address: data.address,
+                gender: data.selectedGender,
+                roleId: "R3",
+            },
+        });
+
+        // ===== 8. Lưu booking =====
+        await db.Booking.create({
+            statusId: "S1",
+            doctorId: data.doctorId,
+            patientId: patient.id,
+            date: data.date,
+            timeType: data.timeType,
+            patientPhoneNumber: data.phoneNumber,
+            patientBirthday: data.birthday,
+            patientAddress: data.address,
+            patientGender: data.selectedGender,
+            examReason: data.reason,
+            paymentMethod: data.selectedPaymentMethod || "PM3",
+            paymentStatus: "PT1",
+            paidAmount: 0,
+            token: token,
+        });
+
+        return {
+            errCode: 0,
+            errMessage: `Booking created successfully!`,
+        };
+    } catch (e) {
+        return {
+            errCode: -1,
+            errMessage: "Server error!",
+        };
+    }
 };
 
 let confirmBookingAppointmentService = (data) => {

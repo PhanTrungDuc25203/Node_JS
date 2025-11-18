@@ -5,8 +5,7 @@ import viewEngine from "./config/viewEngine";
 import initWebRoutes from "./route/web";
 import connectDB from "./config/connectDB";
 import cors from "cors";
-import { cleanOldRecords } from "./services/cleanupScheduleService";
-import { cleanOldSchedules } from "./services/cleanupPackageScheduleService";
+import { startCleanupCronJobs } from "./cron/cleanupDatabaseCron";
 import helmet from "helmet"; // for security
 import compression from "compression"; // for response size optimization
 import morgan from "morgan"; // for logging
@@ -58,16 +57,8 @@ initWebRoutes(app);
 initChatRoutes(app);
 
 connectDB();
-cleanOldRecords(1); // dọn mấy bản ghi quá hạn
-cleanOldSchedules(1);
+startCleanupCronJobs();
 
-// Thiết lập cron job để dọn dẹp định kỳ
-setInterval(() => {
-    cleanOldRecords(1); // Chạy lại mỗi ngày (tùy theo nhu cầu)
-}, 24 * 60 * 60 * 1000); // Mỗi 24 giờ
-setInterval(() => {
-    cleanOldSchedules(1); // Chạy lại mỗi ngày (tùy theo nhu cầu)
-}, 24 * 60 * 60 * 1000); // Mỗi 24 giờ
 // lấy số cổng trong file .env
 let port = process.env.PORT || 6969;
 // nếu số hiệu cổng chưa được khai trong file .env thì mặc định là 6969
