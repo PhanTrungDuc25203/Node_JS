@@ -703,22 +703,37 @@ let saveRateAndReviewAboutDoctorService = (data) => {
     });
 };
 
-let getRateAndReviewAboutDoctorService = (appointmentId) => {
+let getRateAndReviewAboutDoctorService = ({ appointmentId, doctorId }) => {
     return new Promise(async (resolve, reject) => {
         try {
-            if (!appointmentId) {
-                resolve({
+            if (!appointmentId && !doctorId) {
+                return resolve({
                     errCode: 1,
-                    errMessage: "Missing input parameter: appointmentId!",
+                    errMessage: "Missing input parameter: appointmentId or doctorId!",
                 });
-            } else {
-                let res = {};
+            }
+
+            if (appointmentId) {
                 let data = await db.DoctorPackageRate.findOne({
-                    where: { appointmentId: appointmentId },
+                    where: { appointmentId },
                 });
-                res.errCode = 0;
-                res.data = data;
-                resolve(res);
+
+                return resolve({
+                    errCode: 0,
+                    data,
+                });
+            }
+
+            if (doctorId) {
+                let data = await db.DoctorPackageRate.findAll({
+                    where: { doctorId },
+                    order: [["createdAt", "DESC"]],
+                });
+
+                return resolve({
+                    errCode: 0,
+                    data,
+                });
             }
         } catch (e) {
             reject(e);

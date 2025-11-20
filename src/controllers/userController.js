@@ -191,7 +191,13 @@ let saveRateAndReviewAboutDoctor = async (req, res) => {
 
 let getRateAndReviewAboutDoctor = async (req, res) => {
     try {
-        let data = await userService.getRateAndReviewAboutDoctorService(req.query.appointmentId);
+        const { appointmentId, doctorId } = req.query;
+
+        let data = await userService.getRateAndReviewAboutDoctorService({
+            appointmentId,
+            doctorId,
+        });
+
         return res.status(200).json(data);
     } catch (e) {
         return res.status(200).json({
