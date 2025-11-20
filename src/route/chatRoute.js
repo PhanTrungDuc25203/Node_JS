@@ -1,10 +1,12 @@
 import express from "express";
-import { chatWithAI } from "../controllers/chatController";
+import aydController from "../controllers/aydController";
 
-const router = express.Router();
+let initChatRoutes = (app) => {
+    let router = express.Router();
 
-router.post("/chat", chatWithAI);
+    router.post("/api/ayd/session", aydController.createSession);
 
-export default (app) => {
-  app.use("/api", router);
+    return app.use("/", router);
 };
+
+export default initChatRoutes;
