@@ -728,11 +728,30 @@ let getRateAndReviewAboutDoctorService = ({ appointmentId, doctorId }) => {
                 let data = await db.DoctorPackageRate.findAll({
                     where: { doctorId },
                     order: [["createdAt", "DESC"]],
+                    include: [
+                        {
+                            model: db.User,
+                            as: "patientData",
+                            attributes: ["id", "firstName", "lastName", "email", "image"], // các trường bạn muốn lấy
+                        },
+                    ],
                 });
+
+                if (!data || data.length === 0) {
+                    return resolve({
+                        errCode: 0,
+                        data: [],
+                        averageRating: 0,
+                    });
+                }
+
+                let sum = data.reduce((total, item) => total + (item.rating || 0), 0);
+                let average = sum / data.length;
 
                 return resolve({
                     errCode: 0,
                     data,
+                    averageRating: Number(average.toFixed(1)), // làm tròn 1 số thập phân
                 });
             }
         } catch (e) {
