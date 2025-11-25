@@ -121,6 +121,17 @@ let patientInforWhenBookingTimeService = async (data) => {
                 roleId: "R3",
             },
         });
+        if (data.needUpdateProfileInfo === true) {
+            // ===== 7a. Cập nhật các trường còn thiếu =====
+            let updateData = {};
+            if (!patient.gender && data.selectedGender) updateData.gender = data.selectedGender;
+            if (!patient.phoneNumber && data.phoneNumber) updateData.phoneNumber = data.phoneNumber;
+            if (!patient.address && data.address) updateData.address = data.address;
+
+            if (Object.keys(updateData).length > 0) {
+                await patient.update(updateData);
+            }
+        }
 
         // ===== 8. Lưu booking =====
         await db.Booking.create({

@@ -310,7 +310,7 @@ let getAllRelativeInforsOfCurrentSystemUserService = (currentUserEmail) => {
                 let userInUserTable = await db.User.findOne({
                     where: { email: currentUserEmail },
                     attributes: {
-                        exclude: ["password", "id", "createdAt", "updatedAt"],
+                        exclude: ["password", "createdAt", "updatedAt", "image"],
                     },
                     include: [
                         {
@@ -328,26 +328,6 @@ let getAllRelativeInforsOfCurrentSystemUserService = (currentUserEmail) => {
                             as: "genderData",
                             attributes: ["value_Eng", "value_Vie"],
                         },
-                        // {
-                        //     model: db.Booking, as: 'doctorHasAppointmentWithPatients',
-                        //     attributes: ['id', 'statusId', 'timeType', 'doctorId', 'patientId', 'date', 'patientPhoneNumber', 'patientAddress', 'patientBirthday', 'patientGender'],
-                        //     include: [
-                        //         {
-                        //             model: db.Allcode, as: 'appointmentTimeTypeData',
-                        //             attributes: ['value_Vie', 'value_Eng']
-                        //         },
-                        //     ]
-                        // },
-                        // {
-                        //     model: db.Booking, as: 'patientHasAppointmentWithDoctors',
-                        //     attributes: ['id', 'statusId', 'timeType', 'doctorId', 'patientId', 'date', 'patientPhoneNumber', 'patientAddress', 'patientBirthday', 'patientGender'],
-                        //     include: [
-                        //         {
-                        //             model: db.Allcode, as: 'appointmentTimeTypeData',
-                        //             attributes: ['value_Vie', 'value_Eng']
-                        //         },
-                        //     ]
-                        // },
                         {
                             model: db.Doctor_infor,
                             attributes: {
@@ -365,7 +345,20 @@ let getAllRelativeInforsOfCurrentSystemUserService = (currentUserEmail) => {
                 });
 
                 if (userInUserTable) {
-                    // Format lại các trường date và patientBirthday
+                    // ======== LẤY BIRTHDAY TỪ BẢNG BOOKING ========
+                    let bookingRecord = await db.Booking.findOne({
+                        where: { patientId: userInUserTable.id },
+                        attributes: ["patientBirthday"],
+                        order: [["createdAt", "DESC"]],
+                    });
+
+                    if (bookingRecord && bookingRecord.patientBirthday) {
+                        userInUserTable.dataValues.birthday = moment(bookingRecord.patientBirthday).format("DD/MM/YYYY");
+                    } else {
+                        userInUserTable.dataValues.birthday = null;
+                    }
+
+                    // ======== FORMAT DATE CHO DANH SÁCH LỊCH ========
                     if (userInUserTable.doctorHasAppointmentWithPatients) {
                         userInUserTable.doctorHasAppointmentWithPatients.forEach((appointment) => {
                             appointment.date = moment(appointment.date).format("YYYY-MM-DD");
@@ -733,6 +726,11 @@ let getRateAndReviewAboutDoctorService = ({ appointmentId, doctorId }) => {
                             model: db.User,
                             as: "patientData",
                             attributes: ["id", "firstName", "lastName", "email", "image"], // các trường bạn muốn lấy
+                        },
+                        {
+                            model: db.Booking,
+                            as: "appointmentData",
+                            attributes: ["date"],
                         },
                     ],
                 });

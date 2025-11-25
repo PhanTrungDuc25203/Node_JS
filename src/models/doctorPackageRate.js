@@ -11,6 +11,7 @@ module.exports = (sequelize, DataTypes) => {
             // define association here
             DoctorPackageRate.belongsTo(models.User, { foreignKey: "userId", targetKey: "id", as: "patientData" });
             DoctorPackageRate.belongsTo(models.User, { foreignKey: "doctorId", targetKey: "id", as: "doctorData" });
+            DoctorPackageRate.belongsTo(models.Booking, { foreignKey: "appointmentId", targetKey: "id", as: "appointmentData" });
         }
     }
     DoctorPackageRate.init(
