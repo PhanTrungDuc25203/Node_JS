@@ -30,7 +30,14 @@ let initWebRoutes = (app) => {
     router.post("/api/refresh-token", jwtController.handleRefreshToken);
     //viết link api lất tất cả người dùng ra cho react
     router.get("/api/get-all-users-for-react", userController.handleGetAllUsersForReact);
-    router.post("/api/create-new-user-in-react", authMiddleware, authorizeRoles("R1"), userController.handleCreateNewUserInReact);
+    router.post("/api/create-new-user-in-react", userController.handleCreateNewUserInReact);
+    //xác thực email và số điện thoại người dùng
+    router.post("/api/send-email-otp", userController.sendEmailOTP);
+    router.post("/api/verify-email-otp", userController.verifyEmailOTP);
+
+    router.post("/api/send-phone-otp", userController.sendPhoneOTP);
+    router.post("/api/verify-phone-otp", userController.verifyPhoneOTP);
+
     router.put("/api/edit-user-in-react", userController.handleEditUserInReact);
     router.delete("/api/delete-user-in-react", userController.handleDeleteUserInReact);
     router.get("/api/check-user-email-already-exist", userController.checkEmailWetherAlreadyExist);
@@ -45,7 +52,7 @@ let initWebRoutes = (app) => {
     //lấy thông tin map từ 2 bảng user và markdown với key=doctorId để hiển thị thông tin bác sĩ
     router.get("/api/get-a-particular-doctor-infor-for-his-or-her-page", doctorController.getParticularInforForDoctorPage);
     //tạo một schedule cho 1 bac sĩ, một schedule có nhiều timeframe
-    router.post("/api/bulk-create-timeframes-for-doctor-appointment-schedule", authMiddleware, authorizeRoles("R2"), doctorController.createTimeframesForDoctorSchedule);
+    router.post("/api/bulk-create-timeframes-for-doctor-appointment-schedule", authMiddleware, authorizeRoles("R1", "R2"), doctorController.createTimeframesForDoctorSchedule);
     //lấy khung giờ khám cho từng ngày của một bác sĩ
     router.get("/api/get-doctor-schedule-by-date", doctorController.getScheduleByDate);
     //lấy thêm thông tin bác sĩ như địa chỉ phòng khám, giá khám, phương thức thanh toán

@@ -207,10 +207,34 @@ let getRateAndReviewAboutDoctor = async (req, res) => {
     }
 };
 
+let sendEmailOTP = async (req, res) => {
+    let message = await userService.sendEmailOTP(req.body.email);
+    return res.status(200).json(message);
+};
+
+let verifyEmailOTP = async (req, res) => {
+    let message = await userService.verifyEmailOTP(req.body.email, req.body.otp);
+    return res.status(200).json(message);
+};
+
+let sendPhoneOTP = async (req, res) => {
+    let message = await userService.sendPhoneOTP(req.body.phoneNumber);
+    return res.status(200).json(message);
+};
+
+let verifyPhoneOTP = async (req, res) => {
+    let message = await userService.verifyPhoneOTP(req.body.phoneNumber, req.body.otp);
+    return res.status(200).json(message);
+};
+
 module.exports = {
     handleLogin: handleLogin,
     handleGetAllUsersForReact: handleGetAllUsersForReact,
     handleCreateNewUserInReact: handleCreateNewUserInReact,
+    sendEmailOTP: sendEmailOTP,
+    verifyEmailOTP: verifyEmailOTP,
+    sendPhoneOTP: sendPhoneOTP,
+    verifyPhoneOTP: verifyPhoneOTP,
     checkEmailWetherAlreadyExist: checkEmailWetherAlreadyExist,
     handleEditUserInReact: handleEditUserInReact,
     handleDeleteUserInReact: handleDeleteUserInReact,

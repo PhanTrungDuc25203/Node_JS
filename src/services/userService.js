@@ -1,12 +1,15 @@
 import db from "../models/index";
-//trong file này có phần so sánh password để kiểm tra người dùng
-//nên cần so sánh giá trị băm của password chứ không phải pass thuần
-//nên cần thư viện ở dưới
+require("dotenv").config();
 import bcrypt from "bcryptjs";
 import moment from "moment";
+import nodemailer from "nodemailer";
+import twilio from "twilio";
 import { generateAccessToken, generateRefreshToken, saveRefreshToken } from "./jwtService";
 
 const salt = bcrypt.genSaltSync(10);
+const emailOTPStore = {};
+const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+let phoneOTPStore = {};
 
 let hashUserPassword = (password) => {
     return new Promise(async (resolve, reject) => {
@@ -386,139 +389,6 @@ let getAllRelativeInforsOfCurrentSystemUserService = (currentUserEmail) => {
     });
 };
 
-// let getAllRelativeBookingsOfCurrentSystemUserService = (currentUserEmail) => {
-//     return new Promise(async (resolve, reject) => {
-//         try {
-//             if (!currentUserEmail) {
-//                 resolve({
-//                     errCode: 1,
-//                     errMessage: "Missing input parameter: current user email!",
-//                 });
-//             } else {
-//                 let res = {};
-//                 let allBookingsOfCurrentUser = await db.User.findOne({
-//                     where: { email: currentUserEmail },
-//                     attributes: {
-//                         exclude: ["password", "id", "createdAt", "updatedAt", "firstName", "lastName", "address", "gender", "phoneNumber", "image", "roleId", "positionId"],
-//                     },
-//                     include: [
-//                         {
-//                             model: db.Booking,
-//                             as: "doctorHasAppointmentWithPatients",
-//                             attributes: ["id", "statusId", "timeType", "doctorId", "patientId", "date", "patientPhoneNumber", "patientAddress", "patientBirthday", "patientGender", "examReason"],
-//                             include: [
-//                                 {
-//                                     model: db.Allcode,
-//                                     as: "appointmentTimeTypeData",
-//                                     attributes: ["value_Vie", "value_Eng"],
-//                                 },
-//                             ],
-//                         },
-//                         {
-//                             model: db.Booking,
-//                             as: "patientHasAppointmentWithDoctors",
-//                             attributes: ["id", "statusId", "timeType", "doctorId", "patientId", "date", "patientPhoneNumber", "patientAddress", "patientBirthday", "patientGender"],
-//                             include: [
-//                                 {
-//                                     model: db.Allcode,
-//                                     as: "appointmentTimeTypeData",
-//                                     attributes: ["value_Vie", "value_Eng"],
-//                                 },
-//                             ],
-//                         },
-//                     ],
-//                 });
-
-//                 res.errCode = 0;
-//                 res.errMessage = "Get current user bookings successfully!";
-//                 res.data = allBookingsOfCurrentUser;
-
-//                 resolve(res);
-//             }
-//         } catch (e) {
-//             reject(e);
-//         }
-//     });
-// };
-
-// let getAllRelativeBookingsOfCurrentSystemUser2Service = (currentUserEmail) => {
-//     return new Promise(async (resolve, reject) => {
-//         try {
-//             if (!currentUserEmail) {
-//                 resolve({
-//                     errCode: 1,
-//                     errMessage: "Missing input parameter: current user email!",
-//                 });
-//                 return;
-//             }
-
-//             // Tìm user hiện tại và include các booking liên quan
-//             let allBookingsOfCurrentUser = await db.User.findOne({
-//                 where: { email: currentUserEmail },
-//                 attributes: {
-//                     // giữ lại những trường bạn cần cho user hiện tại, loại bỏ phần nhạy cảm
-//                     exclude: ["password", "id", "createdAt", "updatedAt", "firstName", "lastName", "address", "gender", "phoneNumber", "image", "roleId", "positionId"],
-//                 },
-//                 include: [
-//                     // Các booking mà user này là bác sĩ (doctorId = current user id)
-//                     {
-//                         model: db.Booking,
-//                         as: "doctorHasAppointmentWithPatients",
-//                         attributes: ["id", "statusId", "timeType", "doctorId", "patientId", "date", "patientPhoneNumber", "patientAddress", "patientBirthday", "patientGender", "examReason"],
-//                         include: [
-//                             // time type data
-//                             {
-//                                 model: db.Allcode,
-//                                 as: "appointmentTimeTypeData",
-//                                 attributes: ["value_Vie", "value_Eng"],
-//                             },
-//                             // vì booking ở đây là booking where doctorId = current user,
-//                             // ta cần include patient info: dùng alias patientHasAppointmentWithDoctors
-//                             {
-//                                 model: db.User,
-//                                 as: "patientHasAppointmentWithDoctors",
-//                                 attributes: ["id", "firstName", "lastName", "address", "phoneNumber"],
-//                             },
-//                         ],
-//                     },
-
-//                     // Các booking mà user này là bệnh nhân (patientId = current user id)
-//                     {
-//                         model: db.Booking,
-//                         as: "patientHasAppointmentWithDoctors",
-//                         attributes: ["id", "statusId", "timeType", "doctorId", "patientId", "date", "patientPhoneNumber", "patientAddress", "patientBirthday", "patientGender"],
-//                         include: [
-//                             // time type data
-//                             {
-//                                 model: db.Allcode,
-//                                 as: "appointmentTimeTypeData",
-//                                 attributes: ["value_Vie", "value_Eng"],
-//                             },
-//                             // vì booking ở đây là booking where patientId = current user,
-//                             // ta cần include doctor info: dùng alias doctorHasAppointmentWithPatients
-//                             {
-//                                 model: db.User,
-//                                 as: "doctorHasAppointmentWithPatients",
-//                                 attributes: ["id", "firstName", "lastName", "address", "phoneNumber"],
-//                             },
-//                         ],
-//                     },
-//                 ],
-//             });
-
-//             const res = {
-//                 errCode: 0,
-//                 errMessage: "Get current user bookings successfully!",
-//                 data: allBookingsOfCurrentUser,
-//             };
-
-//             resolve(res);
-//         } catch (e) {
-//             reject(e);
-//         }
-//     });
-// };
-
 let getAllRelativeBookingsOfCurrentSystemUserService = (currentUserEmail, appointmentWithUser = false) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -758,11 +628,96 @@ let getRateAndReviewAboutDoctorService = ({ appointmentId, doctorId }) => {
     });
 };
 
+let sendEmailOTP = (email) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+            emailOTPStore[email] = otp;
+
+            let transporter = nodemailer.createTransport({
+                host: "smtp.gmail.com",
+                port: 587,
+                secure: false,
+                service: "gmail",
+                auth: {
+                    user: process.env.SENDER_EMAIL,
+                    pass: process.env.EMAIL_APP_PASSWORD,
+                },
+            });
+
+            await transporter.sendMail({
+                from: `"Xác thực email" <${process.env.SENDER_EMAIL}>`,
+                to: email,
+                subject: "Mã OTP xác thực của bạn",
+                html: `
+                <h2>Mã OTP xác thực của bạn là: <b>${otp}</b></h2>
+                <span>Vui lòng không chia sẻ mã OTP này cho bất cứ ai!</span>
+                `,
+            });
+
+            resolve({ errCode: 0, message: "OTP sent" });
+        } catch (e) {
+            reject(e);
+        }
+    });
+};
+
+let verifyEmailOTP = (email, otp) => {
+    return new Promise((resolve) => {
+        if (emailOTPStore[email] === otp) {
+            delete emailOTPStore[email];
+            resolve({ errCode: 0, message: "OTP correct" });
+        } else {
+            resolve({ errCode: 1, message: "OTP incorrect" });
+        }
+    });
+};
+
+let sendPhoneOTP = (phoneNumber) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const otp = Math.floor(100000 + Math.random() * 900000).toString();
+            phoneOTPStore[phoneNumber] = otp;
+
+            let res = await client.verify.v2.services(process.env.TWILIO_VERIFY_SERVICE_SID).verifications.create({
+                body: `
+                    Mã OTP xác thực của bạn là: ${otp}
+                    Vui lòng không chia sẽ mã này cho bất kỳ ai!
+                `,
+                to: phoneNumber,
+                channel: "sms",
+            });
+
+            // console.log("Check SMS phonenumber response: ", res);
+
+            resolve({ errCode: 0, message: "OTP sent" });
+        } catch (e) {
+            reject(e);
+        }
+    });
+};
+
+let verifyPhoneOTP = (phoneNumber, otp) => {
+    return new Promise(async (resolve, reject) => {
+        const res = await client.verify.v2.services(process.env.TWILIO_VERIFY_SERVICE_SID).verificationChecks.create({
+            to: phoneNumber,
+            code: otp,
+        });
+        resolve({ res });
+        console.log("Check SMS res: ", res);
+    });
+};
+
 module.exports = {
     handleUserLogin: handleUserLogin,
     checkUserEmail: checkUserEmail,
     getAllUsersForReact: getAllUsersForReact,
     createNewUserInReact: createNewUserInReact,
+    sendEmailOTP: sendEmailOTP,
+    sendPhoneOTP: sendPhoneOTP,
+    verifyPhoneOTP: verifyPhoneOTP,
+    verifyEmailOTP: verifyEmailOTP,
     deleteUserInReact: deleteUserInReact,
     editUserInReact: editUserInReact,
     getAllCodesDataService: getAllCodesDataService,
