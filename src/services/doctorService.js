@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 require("dotenv").config();
 import _ from "lodash";
 import sendPaymentEmailService from "./sendPaymentEmailService";
+import sendMedicalReportService from "./sendMedicalReportService";
 import moment from "moment";
 
 const MAX_NUMBER_CAN_RENDEZVOUS_DOCTOR = process.env.MAX_NUMBER_CAN_RENDEZVOUS_DOCTOR;
@@ -309,9 +310,7 @@ let getScheduleByDateService = (doctorId, date) => {
                 });
             } else {
                 // let formattedDate = moment(Number(date)).format('YYYY-MM-DD 00:00:00');
-                console.log("Check formatted date: ", date, "type of date: ", typeof date);
                 let numberDate = Number(date);
-                console.log("Check formatted date (number): ", numberDate, "type of date: ", typeof numberDate);
 
                 let scheduleData = await db.Schedule.findAll({
                     where: {
@@ -334,7 +333,6 @@ let getScheduleByDateService = (doctorId, date) => {
                     },
                 });
 
-                console.log("Check schedule data: ", scheduleData);
                 if (!scheduleData) {
                     scheduleData = ["no schedule"];
                 }
@@ -389,9 +387,6 @@ let getExtraInforDoctorByIDService = (inputId) => {
 let saveAppointmentHistoryService = (inputData) => {
     return new Promise(async (resolve, reject) => {
         try {
-            console.log("Check data: ", inputData);
-
-            // Kiểm tra các tham số bắt buộc
             if (!inputData.appointmentId || !inputData.patientEmail || !inputData.doctorEmail || !inputData.description || !inputData.files || !inputData.appointmentDate || !inputData.appointmentTimeFrame) {
                 resolve({
                     errCode: 1,
@@ -400,7 +395,6 @@ let saveAppointmentHistoryService = (inputData) => {
                 return;
             }
 
-            // 🔹 Lấy thông tin booking hiện tại để kiểm tra trạng thái
             let booking = await db.Booking.findOne({
                 where: { id: inputData.appointmentId },
                 include: [
@@ -424,6 +418,16 @@ let saveAppointmentHistoryService = (inputData) => {
                             },
                         ],
                     },
+                    {
+                        model: db.Allcode,
+                        as: "appointmentTimeTypeData",
+                        attributes: ["value_Vie", "value_Eng"],
+                    },
+                    {
+                        model: db.User,
+                        as: "patientHasAppointmentWithDoctors",
+                        attributes: ["id", "firstName", "lastName", "address", "phoneNumber", "email"],
+                    },
                 ],
                 raw: false,
             });
@@ -436,13 +440,21 @@ let saveAppointmentHistoryService = (inputData) => {
                 return;
             }
 
-            // 🔹 Cập nhật trạng thái tùy theo type
             if (inputData.type === "done-confirm") {
                 booking.statusId = "S3";
                 if (inputData.files) {
                     let fileBuffer = Buffer.from(inputData.files, "base64");
                     booking.files = fileBuffer;
                 }
+                let sendEmailRes = await sendMedicalReportService.sendMedicalReportToPatient({
+                    receiverEmail: inputData.patientEmail,
+                    patientName: `${booking.patientHasAppointmentWithDoctors.lastName} ${booking.patientHasAppointmentWithDoctors.firstName}`,
+                    doctorName: `${booking.doctorHasAppointmentWithPatients.lastName} ${booking.doctorHasAppointmentWithPatients.firstName}`,
+                    appointmentDate: inputData.appointmentDate,
+                    appointmentTimeFrame: inputData.appointmentTimeFrame,
+                    medicalReport: inputData.files,
+                });
+                console.log("Send email response: ", sendEmailRes);
                 await booking.save();
             }
 
@@ -492,6 +504,16 @@ let confirmAppointmentDoneService = (data) => {
                                 as: "appointmentTimeTypeData",
                                 attributes: ["value_Vie", "value_Eng"],
                             },
+                            {
+                                model: db.User,
+                                as: "patientHasAppointmentWithDoctors",
+                                attributes: ["id", "firstName", "lastName", "address", "phoneNumber", "email"],
+                            },
+                            {
+                                model: db.User,
+                                as: "doctorHasAppointmentWithPatients",
+                                attributes: ["id", "firstName", "lastName", "address", "phoneNumber", "email"],
+                            },
                         ],
                     });
 
@@ -502,6 +524,17 @@ let confirmAppointmentDoneService = (data) => {
                             appointment.files = fileBuffer;
                         }
                         await appointment.save();
+                    }
+                    if (appointment.paymentMethod === "PM3") {
+                        let sendEmailRes = await sendMedicalReportService.sendMedicalReportToPatient({
+                            receiverEmail: appointment.patientHasAppointmentWithDoctors.email,
+                            patientName: `${appointment.patientHasAppointmentWithDoctors.lastName} ${appointment.patientHasAppointmentWithDoctors.firstName}`,
+                            doctorName: `${appointment.doctorHasAppointmentWithPatients.lastName} ${appointment.doctorHasAppointmentWithPatients.firstName}`,
+                            appointmentDate: data.appointmentDate,
+                            appointmentTimeFrame: appointment.appointmentTimeTypeData.value_Vie,
+                            medicalReport: appointment.files,
+                        });
+                        console.log("Check send email response: ", sendEmailRes);
                     }
                     if (appointment.paymentMethod === "PM2") {
                         let patientInfo = await db.User.findOne({
@@ -539,6 +572,7 @@ let confirmAppointmentDoneService = (data) => {
                             clinicAddress: doctorInfo.Doctor_infor.clinicAddress,
                             language: data.language,
                             redirectLink: redirectLink,
+                            medicalReport: appointment.files,
                             language: "vi",
                         });
                     }
@@ -599,7 +633,6 @@ let confirmAppointmentDoneService = (data) => {
 let handlePostVisitPaymentMethodService = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
-            console.log("check data: ", data);
             if (!data || !data.token || !data.doctorId || !data.paidAmount) {
                 resolve({
                     errCode: 1,

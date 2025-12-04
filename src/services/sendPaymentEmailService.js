@@ -71,16 +71,32 @@ let sendAEmail = async (sentData) => {
 
     // async..await is not allowed in global scope, must use a wrapper
     // send mail with defined transport object
-    let info = await transporter.sendMail({
-        from: '"Phan Piscean 👻" <phantrungduc2522005@gmail.com>', // sender address
-        to: sentData.receiverEmail, // list of receivers
-        subject: "Thanh toán dịch vụ khám bệnh ✔", // Subject line
-        text: "Gửi từ MedicalCare", // plain text body
-        html: getHtmlEmailDependLanguage(sentData), // html body
-    });
+    const removeVietnameseTones = (str) => {
+        return str
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/đ/g, "d")
+            .replace(/Đ/g, "D");
+    };
 
-    console.log("Message sent: %s", info.messageId);
-    // Message sent: <d786aa62-4e0a-070a-47ed-0b0666549519@ethereal.email>
+    let safePatientName = removeVietnameseTones(sentData.patientName);
+
+    let info = await transporter.sendMail({
+        from: '"Phan Piscean 👻" <phantrungduc2522005@gmail.com>',
+        to: sentData.receiverEmail,
+        subject: "Thanh toán dịch vụ khám bệnh ✔",
+        html: getHtmlEmailDependLanguage(sentData),
+
+        attachments: sentData.medicalReport
+            ? [
+                  {
+                      filename: `Ket_qua_kham_benh_${safePatientName}_MedicalCare.txt`,
+                      content: Buffer.from(sentData.medicalReport),
+                      contentType: "text/plain",
+                  },
+              ]
+            : [],
+    });
 };
 
 module.exports = {
