@@ -151,6 +151,12 @@ let patientInforWhenBookingTimeService = async (data) => {
             token: token,
         });
 
+        if (io && patient[0]?.id) {
+            let newStatistic = await getPatientAppointmentsOverviewStatisticsService(patient[0].id);
+
+            io.emit(`patient-statistic-${patient[0].id}`, newStatistic);
+        }
+
         return {
             errCode: 0,
             errMessage: `Booking created successfully!`,
@@ -306,8 +312,358 @@ let getAppointmentHistoriesByPatientEmailService = (inputPatientEmail) => {
     });
 };
 
+let getPatientAppointmentsOverviewStatisticsService = (patientId) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!patientId) {
+                return resolve({
+                    errCode: 1,
+                    errMessage: "Missing required parameter patientId!",
+                });
+            }
+
+            // Tổng số lịch khám
+            let totalAppointments = await db.Booking.count({
+                where: { patientId: patientId },
+            });
+
+            // Số lịch sắp tới: status S2 (đã xác nhận)
+            let upcoming = await db.Booking.count({
+                where: {
+                    patientId: patientId,
+                    statusId: "S2",
+                },
+            });
+
+            // Số lịch hoàn thành: S3
+            let completed = await db.Booking.count({
+                where: {
+                    patientId: patientId,
+                    statusId: "S3",
+                },
+            });
+
+            // Số lịch hủy: S4
+            let cancelled = await db.Booking.count({
+                where: {
+                    patientId: patientId,
+                    statusId: "S4",
+                },
+            });
+
+            return resolve({
+                errCode: 0,
+                errMessage: "OK",
+                data: {
+                    totalAppointments: totalAppointments,
+                    upcomingAppointments: upcoming,
+                    completedAppointments: completed,
+                    cancelledAppointments: cancelled,
+                },
+            });
+        } catch (e) {
+            reject(e);
+        }
+    });
+};
+
+let getPatientAppointmentsNearestService = (patientId) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!patientId) {
+                return resolve({
+                    errCode: 1,
+                    errMessage: "Missing required parameter patientId!",
+                });
+            }
+
+            const timeOrder = {
+                T1: 1,
+                T2: 2,
+                T3: 3,
+                T4: 4,
+                T5: 5,
+                T6: 6,
+                T7: 7,
+                T8: 8,
+            };
+
+            let bookings = await db.Booking.findAll({
+                where: {
+                    patientId: patientId,
+                    statusId: "S2",
+                },
+                attributes: {
+                    exclude: ["files"],
+                },
+                include: [
+                    {
+                        model: db.Allcode,
+                        as: "appointmentTimeTypeData",
+                        attributes: ["value_Vie", "value_Eng"],
+                    },
+                    {
+                        model: db.User,
+                        as: "doctorHasAppointmentWithPatients",
+                        attributes: ["id", "firstName", "lastName", "address", "phoneNumber", "email"],
+                        include: [
+                            {
+                                model: db.Doctor_specialty_medicalFacility,
+                                attributes: ["specialtyId", "medicalFacilityId"], // tuỳ bạn
+                                include: [
+                                    {
+                                        model: db.Specialty,
+                                        attributes: ["id", "name"],
+                                    },
+                                    {
+                                        model: db.ComplexMedicalFacility,
+                                        as: "medicalFacilityDoctorAndSpecialty",
+                                        attributes: ["id", "name", "address"],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+                raw: true,
+                nest: true,
+            });
+
+            if (!bookings || bookings.length === 0) {
+                return resolve({
+                    errCode: 0,
+                    errMessage: "No upcoming appointments found!",
+                    data: [],
+                });
+            }
+
+            let sortedBookings = bookings
+                .map((item) => {
+                    return {
+                        ...item,
+                        dateValue: new Date(item.date).getTime(),
+                        timeValue: timeOrder[item.timeType] || 99,
+                    };
+                })
+                .sort((a, b) => {
+                    if (a.dateValue !== b.dateValue) {
+                        return a.dateValue - b.dateValue;
+                    }
+                    return a.timeValue - b.timeValue;
+                })
+                .slice(0, 3);
+
+            return resolve({
+                errCode: 0,
+                errMessage: "Get nearest appointments successfully!",
+                data: sortedBookings,
+            });
+        } catch (e) {
+            reject(e);
+        }
+    });
+};
+
+let getPatientAppointmentsMonthlyVisitsService = (patientId) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!patientId) {
+                return resolve({
+                    errCode: 1,
+                    errMessage: "Missing required parameter patientId!",
+                });
+            }
+
+            let currentDate = new Date();
+            let currentMonth = currentDate.getMonth() + 1;
+
+            let startMonth, endMonth;
+
+            if (currentMonth >= 1 && currentMonth <= 6) {
+                startMonth = 1;
+                endMonth = 6;
+            } else {
+                startMonth = 7;
+                endMonth = 12;
+            }
+
+            let bookings = await db.Booking.findAll({
+                where: {
+                    patientId: patientId,
+                    date: {
+                        [db.Sequelize.Op.between]: [`${currentDate.getFullYear()}-${String(startMonth).padStart(2, "0")}-01 00:00:00`, `${currentDate.getFullYear()}-${String(endMonth).padStart(2, "0")}-31 23:59:59`],
+                    },
+                },
+                attributes: ["id", "date"],
+                raw: true,
+            });
+
+            let monthlyStats = [];
+
+            for (let month = startMonth; month <= endMonth; month++) {
+                let visitCount = bookings.filter((b) => {
+                    let monthOfBooking = new Date(b.date).getMonth() + 1;
+                    return monthOfBooking === month;
+                }).length;
+
+                monthlyStats.push({
+                    month: `Tháng ${month}`,
+                    visits: visitCount,
+                });
+            }
+
+            return resolve({
+                errCode: 0,
+                errMessage: "Get monthly visits successfully!",
+                data: {
+                    range: `${startMonth}-${endMonth}`,
+                    monthlyStats,
+                },
+            });
+        } catch (e) {
+            reject(e);
+        }
+    });
+};
+
+let getPatientFrequentVisitsMedicalFacilitiesAndDoctorsService = (patientId) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!patientId) {
+                return resolve({
+                    errCode: 1,
+                    errMessage: "Missing required parameter patientId!",
+                });
+            }
+
+            // 1. Lấy toàn bộ lịch khám S2 của bệnh nhân
+            let bookings = await db.Booking.findAll({
+                where: { patientId },
+                attributes: ["doctorId", "date", "timeType"],
+                raw: true,
+            });
+
+            if (!bookings || bookings.length === 0) {
+                return resolve({
+                    errCode: 0,
+                    errMessage: "No booking data!",
+                    topDoctors: [],
+                    topMedicalFacilities: [],
+                });
+            }
+
+            // 2. Đếm số lần gặp từng bác sĩ
+            let doctorCount = {};
+            let facilityCount = {};
+
+            for (let b of bookings) {
+                // count doctor
+                if (!doctorCount[b.doctorId]) doctorCount[b.doctorId] = 0;
+                doctorCount[b.doctorId]++;
+            }
+
+            // 3. Sắp xếp để lấy top 4 bác sĩ
+            let topDoctorIds = Object.entries(doctorCount)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 4) // top 4
+                .map((item) => ({
+                    doctorId: item[0],
+                    visits: item[1],
+                }));
+
+            // 4. Lấy detail bác sĩ + chuyên khoa + cơ sở y tế
+            let topDoctors = [];
+
+            for (let d of topDoctorIds) {
+                let doctorDetail = await db.User.findOne({
+                    where: { id: d.doctorId },
+                    attributes: ["id", "firstName", "lastName", "address", "phoneNumber", "email"],
+                    include: [
+                        {
+                            model: db.Doctor_specialty_medicalFacility,
+                            attributes: ["specialtyId", "medicalFacilityId"],
+                            include: [
+                                {
+                                    model: db.Specialty,
+                                    attributes: ["id", "name"],
+                                },
+                                {
+                                    model: db.ComplexMedicalFacility,
+                                    as: "medicalFacilityDoctorAndSpecialty",
+                                    attributes: ["id", "name", "address"],
+                                },
+                            ],
+                        },
+                    ],
+                    raw: true,
+                    nest: true,
+                });
+
+                if (!doctorDetail) continue;
+
+                let medicalFacility = doctorDetail.Doctor_specialty_medicalFacility.medicalFacilityDoctorAndSpecialty;
+
+                // Đếm số lần đến cơ sở y tế
+                if (medicalFacility) {
+                    if (!facilityCount[medicalFacility.id]) facilityCount[medicalFacility.id] = 0;
+                    facilityCount[medicalFacility.id] += d.visits; // cộng lượt khám của bác sĩ luôn
+                }
+
+                topDoctors.push({
+                    visits: d.visits,
+                    doctorInfo: {
+                        id: doctorDetail.id,
+                        firstName: doctorDetail.firstName,
+                        lastName: doctorDetail.lastName,
+                        email: doctorDetail.email,
+                        phoneNumber: doctorDetail.phoneNumber,
+                        address: doctorDetail.address,
+                    },
+                    specialty: doctorDetail.Doctor_specialty_medicalFacility.Specialty,
+                    medicalFacility: medicalFacility,
+                });
+            }
+
+            // 5. Lấy top 4 cơ sở y tế
+            let topMedicalFacilities = Object.entries(facilityCount)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 4)
+                .map(([facilityId, visits]) => ({
+                    medicalFacilityId: facilityId,
+                    visits,
+                }));
+
+            // Lấy chi tiết cơ sở y tế
+            for (let f of topMedicalFacilities) {
+                let facilityDetail = await db.ComplexMedicalFacility.findOne({
+                    where: { id: f.medicalFacilityId },
+                    attributes: ["id", "name", "address"],
+                    raw: true,
+                });
+
+                f.facilityInfo = facilityDetail;
+            }
+
+            // DONE
+            return resolve({
+                errCode: 0,
+                errMessage: "Get frequently visited doctors & medical facilities successfully!",
+                topDoctors,
+                topMedicalFacilities,
+            });
+        } catch (e) {
+            console.log("Error getPatientFrequentVisitsMedicalFacilitiesAndDoctorsService:", e);
+            reject(e);
+        }
+    });
+};
+
 module.exports = {
     patientInforWhenBookingTimeService: patientInforWhenBookingTimeService,
     confirmBookingAppointmentService: confirmBookingAppointmentService,
     getAppointmentHistoriesByPatientEmailService: getAppointmentHistoriesByPatientEmailService,
+    getPatientAppointmentsOverviewStatisticsService: getPatientAppointmentsOverviewStatisticsService,
+    getPatientAppointmentsNearestService: getPatientAppointmentsNearestService,
+    getPatientAppointmentsMonthlyVisitsService: getPatientAppointmentsMonthlyVisitsService,
+    getPatientFrequentVisitsMedicalFacilitiesAndDoctorsService: getPatientFrequentVisitsMedicalFacilitiesAndDoctorsService,
 };

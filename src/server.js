@@ -11,11 +11,28 @@ import compression from "compression"; // for response size optimization
 import morgan from "morgan"; // for logging
 import initChatRoutes from "./route/chatRoute";
 import cookieParser from "cookie-parser";
+import http from "http";
+import { Server } from "socket.io";
 
 require("dotenv").config();
 // câu lệnh trên có thể gọi tới hàm config của thư viện dotenv và giúp
 // chạy được dòng "let port = process.env.PORT || 6969;"
 let app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: process.env.URL_REACT_SERVER || "*",
+        credentials: true,
+    },
+});
+app.set("io", io);
+io.on("connection", (socket) => {
+    console.log("Client connected:", socket.id);
+
+    socket.on("disconnect", () => {
+        console.log("Client disconnected:", socket.id);
+    });
+});
 app.use(helmet());
 app.use(morgan("combined"));
 app.use(compression());
@@ -62,7 +79,7 @@ startCleanupCronJobs();
 // lấy số cổng trong file .env
 let port = process.env.PORT || 6969;
 // nếu số hiệu cổng chưa được khai trong file .env thì mặc định là 6969
-app.listen(port, () => {
+server.listen(port, () => {
     //callback
     console.log("Backend Nodejs is runing on the port : " + port);
 });

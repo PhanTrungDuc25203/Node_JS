@@ -54,6 +54,7 @@ let handleUserLogin = (email, password) => {
                         errCode: 0,
                         message: "Login successful",
                         user: {
+                            id: user.id,
                             email: user.email,
                             roleId: user.roleId,
                             firstName: user.firstName,

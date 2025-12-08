@@ -447,39 +447,6 @@ let patientInforWhenBookingExamPackageService = (data) => {
                     },
                 });
 
-                // let patient = await db.User.findOrCreate({
-                //     where: { email: data.email },
-                //     defaults: {
-                //         email: data.email,
-                //         lastName: data.fullname,
-                //         phoneNumber: data.phoneNumber,
-                //         address: data.address,
-                //         gender: data.selectedGender,
-                //         roleId: 'R3',
-                //     }
-                // });
-
-                //create a booking records
-                // if (patient && patient[0]) {
-                //     await db.Booking.findOrCreate({
-                //         where: {//khi khác S3 thì không lưu bản ghi mới: db.Sequelize.Op.ne là not equal = ne
-                //             patientId: patient[0].id, doctorId: data.doctorId, statusId: { [db.Sequelize.Op.ne]: 'S3' }
-                //         },
-                //         defaults: {
-                //             statusId: 'S1', //hardcode
-                //             doctorId: data.doctorId,
-                //             patientId: patient[0].id,
-                //             date: data.date,
-                //             timeType: data.timeType,
-                //             patientPhoneNumber: data.phoneNumber,
-                //             patientBirthday: data.birthday,
-                //             patientAddress: data.address,
-                //             patientGender: data.selectedGender,
-                //             token: token,
-                //         }
-                //     })
-                // }
-
                 resolve({
                     errCode: 0,
                     errMessage: `Save patient's information successfully!`,

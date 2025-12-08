@@ -111,6 +111,14 @@ let initWebRoutes = (app) => {
     router.post("/api/handle-post-visit-payment-method", doctorController.handlePostVisitPaymentMethod);
     //lưu bệnh án
     router.post("/api/save-clinical-report-content-to-database", doctorController.saveClinicalReportContentToDatabase);
+    //lấy con số thống kê tổng quan về lịch khám cho dashboard bệnh nhân
+    router.get("/api/patient/appointments/overview-statistics", patientController.getPatientAppointmentsOverviewStatistics);
+    //lấy lịch hẹn gần nhất cho dashboard của bệnh nhân
+    router.get("/api/patient/appointments/nearest", patientController.getPatientAppointmentsNearest);
+    //thống kê lịch khám hàng tháng
+    router.get("/api/patient/appointments/monthly-visits", patientController.getPatientAppointmentsMonthlyVisits);
+    //thống kê bác sĩ thường gặp và cơ sở y tế thường đến khám
+    router.get("/api/patient/:patientId/stats/frequent-visits-medical-facilities-doctors", patientController.getPatientFrequentVisitsMedicalFacilitiesAndDoctors);
 
     return app.use("/", router);
 };

@@ -2,7 +2,8 @@ import patientService from "../services/patientService";
 
 let patientInforWhenBookingTime = async (req, res) => {
     try {
-        let infor = await patientService.patientInforWhenBookingTimeService(req.body);
+        let io = req.app.get("io");
+        let infor = await patientService.patientInforWhenBookingTimeService(req.body, io);
         return res.status(200).json(infor);
     } catch (e) {
         console.log(e);
@@ -40,8 +41,64 @@ let getAppointmentHistoriesByPatientEmail = async (req, res) => {
     }
 };
 
+let getPatientAppointmentsOverviewStatistics = async (req, res) => {
+    try {
+        let statistic = await patientService.getPatientAppointmentsOverviewStatisticsService(req.query.patientId);
+        return res.status(200).json(statistic);
+    } catch (e) {
+        console.log(e);
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: "Get patient's appointments overview statistic fail from server!",
+        });
+    }
+};
+
+let getPatientAppointmentsNearest = async (req, res) => {
+    try {
+        let data = await patientService.getPatientAppointmentsNearestService(req.query.patientId);
+        return res.status(200).json(data);
+    } catch (e) {
+        console.log(e);
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: "Get patient's nearest appointments fail from server!",
+        });
+    }
+};
+
+let getPatientAppointmentsMonthlyVisits = async (req, res) => {
+    try {
+        let data = await patientService.getPatientAppointmentsMonthlyVisitsService(req.query.patientId);
+        return res.status(200).json(data);
+    } catch (e) {
+        console.log(e);
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: "Get patient's monthly visits fail from server!",
+        });
+    }
+};
+
+let getPatientFrequentVisitsMedicalFacilitiesAndDoctors = async (req, res) => {
+    try {
+        let data = await patientService.getPatientFrequentVisitsMedicalFacilitiesAndDoctorsService(req.params.patientId);
+        return res.status(200).json(data);
+    } catch (e) {
+        console.log(e);
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: "Get patient's monthly visits fail from server!",
+        });
+    }
+};
+
 module.exports = {
     patientInforWhenBookingTime: patientInforWhenBookingTime,
     confirmBookingAppointment: confirmBookingAppointment,
     getAppointmentHistoriesByPatientEmail: getAppointmentHistoriesByPatientEmail,
+    getPatientAppointmentsOverviewStatistics: getPatientAppointmentsOverviewStatistics,
+    getPatientAppointmentsNearest: getPatientAppointmentsNearest,
+    getPatientAppointmentsMonthlyVisits: getPatientAppointmentsMonthlyVisits,
+    getPatientFrequentVisitsMedicalFacilitiesAndDoctors: getPatientFrequentVisitsMedicalFacilitiesAndDoctors,
 };
