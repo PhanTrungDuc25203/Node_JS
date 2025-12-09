@@ -220,7 +220,7 @@ let getParticularInforForDoctorPage = (inputDoctorId) => {
                                 {
                                     model: db.ComplexMedicalFacility,
                                     as: "medicalFacilityDoctorAndSpecialty",
-                                    attributes: ["id", "name"],
+                                    attributes: ["id", "name", "address"],
                                 },
                             ],
                         },

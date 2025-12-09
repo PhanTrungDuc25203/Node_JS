@@ -151,12 +151,6 @@ let patientInforWhenBookingTimeService = async (data) => {
             token: token,
         });
 
-        if (io && patient[0]?.id) {
-            let newStatistic = await getPatientAppointmentsOverviewStatisticsService(patient[0].id);
-
-            io.emit(`patient-statistic-${patient[0].id}`, newStatistic);
-        }
-
         return {
             errCode: 0,
             errMessage: `Booking created successfully!`,
