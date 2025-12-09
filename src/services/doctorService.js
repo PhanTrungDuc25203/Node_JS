@@ -1,6 +1,7 @@
 import { resolveInclude } from "ejs";
 import db from "../models/index";
 import bcrypt from "bcryptjs";
+import { Op } from "sequelize";
 require("dotenv").config();
 import _ from "lodash";
 import sendPaymentEmailService from "./sendPaymentEmailService";
@@ -787,6 +788,232 @@ let saveClinicalReportContentToDatabaseService = (data) => {
     });
 };
 
+let getDoctorAppointmentsTodayOverviewStatisticsService = (doctorId) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!doctorId) {
+                return resolve({
+                    errCode: 1,
+                    errMessage: "Missing required parameter doctorId!",
+                });
+            }
+
+            let today = moment().format("YYYY-MM-DD");
+
+            let totalPatients = await db.Booking.count({
+                where: {
+                    doctorId: doctorId,
+                    // statusId: "S3",
+                },
+                distinct: true,
+                col: "patientId",
+            });
+
+            let todayAppointments = await db.Booking.count({
+                where: {
+                    doctorId: doctorId,
+                    date: today,
+                },
+            });
+
+            let completedToday = await db.Booking.count({
+                where: {
+                    doctorId: doctorId,
+                    date: today,
+                    statusId: "S3",
+                },
+            });
+
+            // 4️⃣ Số lịch hẹn hôm nay chưa hoàn thành (Booked + Confirmed)
+            let pendingAppointments = await db.Booking.count({
+                where: {
+                    doctorId: doctorId,
+                    date: today,
+                    statusId: { [Op.in]: ["S2"] },
+                },
+            });
+
+            let doctorSpecialtyAndWorkplace = await db.Doctor_specialty_medicalFacility.findOne({
+                where: {
+                    doctorId: doctorId,
+                },
+                include: [
+                    {
+                        model: db.Specialty,
+                        attributes: ["id", "name"],
+                    },
+                    {
+                        model: db.ComplexMedicalFacility,
+                        as: "medicalFacilityDoctorAndSpecialty",
+                        attributes: ["id", "name", "address"],
+                    },
+                ],
+            });
+
+            return resolve({
+                errCode: 0,
+                data: {
+                    totalPatients,
+                    todayAppointments,
+                    completedToday,
+                    pendingAppointments,
+                    doctorSpecialtyAndWorkplace,
+                },
+            });
+        } catch (e) {
+            reject(e);
+        }
+    });
+};
+
+let getDoctorStatisticMonthlyPatientsService = (doctorId) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!doctorId) {
+                return resolve({
+                    errCode: 1,
+                    errMessage: "Missing required parameter doctorId!",
+                });
+            }
+
+            const { Op, fn, col, literal } = db.Sequelize;
+            const now = new Date();
+            const currentMonth = now.getMonth() + 1; // 1-12
+            const currentYear = now.getFullYear();
+
+            // Chọn nửa năm
+            const startMonth = currentMonth <= 6 ? 1 : 7;
+            const endMonth = currentMonth <= 6 ? 6 : 12;
+
+            // ===============================
+            // 1) Monthly Patients
+            // ===============================
+            const monthlyRaw = await db.Booking.findAll({
+                where: {
+                    doctorId,
+                    [Op.and]: [
+                        db.sequelize.where(fn("YEAR", col("date")), currentYear),
+                        db.sequelize.where(fn("MONTH", col("date")), {
+                            [Op.between]: [startMonth, endMonth],
+                        }),
+                    ],
+                },
+                attributes: [
+                    [fn("MONTH", col("date")), "month"],
+                    [fn("COUNT", col("*")), "patients"],
+                ],
+                group: [fn("MONTH", col("date"))],
+                order: [[fn("MONTH", col("date")), "ASC"]],
+                raw: true,
+            });
+
+            // Chuẩn hóa (fill đủ tháng)
+            const monthlyPatients = [];
+            for (let m = startMonth; m <= endMonth; m++) {
+                const found = monthlyRaw.find((x) => Number(x.month) === m);
+                monthlyPatients.push({
+                    month: `Tháng ${m}`,
+                    patients: found ? Number(found.patients) : 0,
+                });
+            }
+
+            // ===============================
+            // 2) Monthly Revenue
+            // ===============================
+            const monthlyRevenueRaw = await db.Booking.findAll({
+                where: {
+                    doctorId,
+                    paymentStatus: "PT3", // chỉ thanh toán xong
+                    [Op.and]: [
+                        db.sequelize.where(fn("YEAR", col("date")), currentYear),
+                        db.sequelize.where(fn("MONTH", col("date")), {
+                            [Op.between]: [startMonth, endMonth],
+                        }),
+                    ],
+                },
+                attributes: [
+                    [fn("MONTH", col("date")), "month"],
+                    [fn("SUM", col("paidAmount")), "revenue"],
+                    [fn("COUNT", col("*")), "patients"],
+                ],
+                group: [fn("MONTH", col("date"))],
+                order: [[fn("MONTH", col("date")), "ASC"]],
+                raw: true,
+            });
+
+            const monthlyRevenue = [];
+            for (let m = startMonth; m <= endMonth; m++) {
+                const found = monthlyRevenueRaw.find((x) => Number(x.month) === m);
+                monthlyRevenue.push({
+                    month: `Tháng ${m}`,
+                    revenue: found ? Number(found.revenue) : 0,
+                    patients: found ? Number(found.patients) : 0,
+                });
+            }
+
+            // ===============================
+            // 3) Frequent Patients (TOP 4)
+            // ===============================
+            const frequentRaw = await db.Booking.findAll({
+                where: { doctorId },
+                include: [
+                    {
+                        model: db.User,
+                        as: "patientHasAppointmentWithDoctors",
+                        attributes: ["firstName", "lastName"],
+                    },
+                ],
+                attributes: ["patientId", "patientBirthday", [fn("COUNT", col("Booking.patientId")), "visits"], [fn("MAX", col("date")), "lastVisit"]],
+                group: ["patientId", "patientBirthday", "patientHasAppointmentWithDoctors.id", "patientHasAppointmentWithDoctors.firstName", "patientHasAppointmentWithDoctors.lastName"],
+                order: [[literal("visits"), "DESC"]],
+                limit: 4,
+                raw: true,
+                nest: true,
+            });
+
+            const frequentPatients = frequentRaw.map((item) => {
+                let age = null;
+                if (item.patientBirthday) {
+                    const bd = new Date(item.patientBirthday);
+                    if (!isNaN(bd)) {
+                        age = now.getFullYear() - bd.getFullYear();
+                        const mm = now.getMonth() - bd.getMonth();
+                        const dd = now.getDate() - bd.getDate();
+                        if (mm < 0 || (mm === 0 && dd < 0)) age--;
+                    }
+                }
+
+                const first = item.patientHasAppointmentWithDoctors?.firstName || "";
+                const last = item.patientHasAppointmentWithDoctors?.lastName || "";
+                const name = `${last} ${first}`.trim();
+
+                const lastVisitStr = item.lastVisit ? new Date(item.lastVisit).toLocaleDateString("vi-VN") : null;
+
+                return {
+                    name,
+                    age,
+                    visits: Number(item.visits),
+                    lastVisit: lastVisitStr,
+                };
+            });
+
+            // ===============================
+            // RETURN
+            // ===============================
+            return resolve({
+                errCode: 0,
+                data: {
+                    monthlyPatients,
+                    frequentPatients,
+                    monthlyRevenue,
+                },
+            });
+        } catch (e) {
+            reject(e);
+        }
+    });
+};
+
 module.exports = {
     getEliteDoctorForHomePage: getEliteDoctorForHomePage,
     getAllDoctorsForDoctorArticlePage: getAllDoctorsForDoctorArticlePage,
@@ -800,4 +1027,6 @@ module.exports = {
     getAppointmentHistoriesByDoctorEmailService: getAppointmentHistoriesByDoctorEmailService,
     handlePostVisitPaymentMethodService: handlePostVisitPaymentMethodService,
     saveClinicalReportContentToDatabaseService: saveClinicalReportContentToDatabaseService,
+    getDoctorAppointmentsTodayOverviewStatisticsService: getDoctorAppointmentsTodayOverviewStatisticsService,
+    getDoctorStatisticMonthlyPatientsService: getDoctorStatisticMonthlyPatientsService,
 };

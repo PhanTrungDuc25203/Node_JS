@@ -28,20 +28,30 @@ let patientInforWhenBookingTimeService = async (data) => {
             };
         }
 
+        // Lấy thông tin user theo email
+        let user = await db.User.findOne({
+            where: { email: data.email },
+            raw: true,
+        });
+
+        if (!user) {
+            return {
+                errCode: 1,
+                errMessage: "Tài khoản không tồn tại!",
+            };
+        }
+
         // ===== 2. Kiểm tra xung đột lịch hẹn =====
 
         // Check ❶: Người dùng đã có lịch với chính bác sĩ này cùng ngày
         let conflictSameDoctor = await db.Booking.findOne({
             where: {
-                patientId: db.Sequelize.literal(`
-                    (SELECT id FROM Users WHERE email = '${data.email}')
-                `),
+                patientId: user.id,
                 doctorId: data.doctorId,
-                date: data.date, // ngày giống nhau
-                statusId: { [db.Sequelize.Op.ne]: "S3" }, // không tính lịch đã xong
+                date: data.date,
+                statusId: { [db.Sequelize.Op.ne]: "S3" },
             },
         });
-
         if (conflictSameDoctor) {
             return {
                 errCode: 2,
@@ -52,9 +62,7 @@ let patientInforWhenBookingTimeService = async (data) => {
         // Check ❷: Người dùng đã đặt lịch cùng timeType + cùng ngày nhưng với bác sĩ khác
         let conflictSameTime = await db.Booking.findOne({
             where: {
-                patientId: db.Sequelize.literal(`
-                    (SELECT id FROM Users WHERE email = '${data.email}')
-                `),
+                patientId: user.id,
                 doctorId: { [db.Sequelize.Op.ne]: data.doctorId },
                 date: data.date,
                 timeType: data.timeType,

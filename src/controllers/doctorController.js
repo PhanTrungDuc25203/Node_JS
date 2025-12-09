@@ -159,6 +159,32 @@ let saveClinicalReportContentToDatabase = async (req, res) => {
     }
 };
 
+let getDoctorAppointmentsTodayOverviewStatistics = async (req, res) => {
+    try {
+        let response = await doctorService.getDoctorAppointmentsTodayOverviewStatisticsService(req.query.doctorId);
+        return res.status(200).json(response);
+    } catch (e) {
+        console.log(e);
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: "Get doctor's appointments today overview statistic error from server!",
+        });
+    }
+};
+
+let getDoctorStatisticMonthlyPatients = async (req, res) => {
+    try {
+        let response = await doctorService.getDoctorStatisticMonthlyPatientsService(req.query.doctorId);
+        return res.status(200).json(response);
+    } catch (e) {
+        console.log(e);
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: "Get doctor's appointments today overview statistic error from server!",
+        });
+    }
+};
+
 module.exports = {
     getEliteDoctorForHomePage: getEliteDoctorForHomePage,
     getAllDoctorsForDoctorArticlePage: getAllDoctorsForDoctorArticlePage,
@@ -171,4 +197,6 @@ module.exports = {
     getAppointmentHistoriesByDoctorEmail: getAppointmentHistoriesByDoctorEmail,
     handlePostVisitPaymentMethod: handlePostVisitPaymentMethod,
     saveClinicalReportContentToDatabase: saveClinicalReportContentToDatabase,
+    getDoctorAppointmentsTodayOverviewStatistics: getDoctorAppointmentsTodayOverviewStatistics,
+    getDoctorStatisticMonthlyPatients: getDoctorStatisticMonthlyPatients,
 };

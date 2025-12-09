@@ -119,6 +119,10 @@ let initWebRoutes = (app) => {
     router.get("/api/patient/appointments/monthly-visits", patientController.getPatientAppointmentsMonthlyVisits);
     //thống kê bác sĩ thường gặp và cơ sở y tế thường đến khám
     router.get("/api/patient/:patientId/stats/frequent-visits-medical-facilities-doctors", patientController.getPatientFrequentVisitsMedicalFacilitiesAndDoctors);
+    //lấy con số thống kê tổng quan về lịch khám cho dashboard bác sĩ
+    router.get("/api/doctor/appointments/today/overview-statistics", doctorController.getDoctorAppointmentsTodayOverviewStatistics);
+    //lấy thống kê người khám theo tháng cho trang dashboard bác sĩ
+    router.get("/api/doctor/statistics/monthly/patients", doctorController.getDoctorStatisticMonthlyPatients);
 
     return app.use("/", router);
 };
