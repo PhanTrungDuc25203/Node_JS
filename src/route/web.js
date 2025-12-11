@@ -7,6 +7,7 @@ import patientController from "../controllers/patientController";
 import specialtyController from "../controllers/specialtyController";
 import medicalFacilityController from "../controllers/medicalFacilityController";
 import searchController from "../controllers/searchController";
+import staffController from "../controllers/staffController";
 import paymentController from "../controllers/paymentController";
 import googleController from "../controllers/googleController";
 import jwtController from "../controllers/jwtController";
@@ -123,6 +124,9 @@ let initWebRoutes = (app) => {
     router.get("/api/doctor/appointments/today/overview-statistics", doctorController.getDoctorAppointmentsTodayOverviewStatistics);
     //lấy thống kê người khám theo tháng cho trang dashboard bác sĩ
     router.get("/api/doctor/statistics/monthly/patients", doctorController.getDoctorStatisticMonthlyPatients);
+
+    //lưu biểu mẫu kết quả khám của gói khám
+    router.post("/api/exam-package/result-template", staffController.createResultTemplate);
 
     return app.use("/", router);
 };
