@@ -391,72 +391,154 @@ let getPackageScheduleByDateService = (packageId, date) => {
     });
 };
 
-let buildUrlConfirmMedicalRecord = (doctorId, token) => {
-    let result = `${process.env.URL_REACT_SERVER}/confirm-booking?token=${token}&doctorId=${doctorId}`;
+let buildUrlConfirmBookingExamPackage = (packageId, token) => {
+    let result = `${process.env.URL_REACT_SERVER}/confirm-booking-exam-package?token=${token}&packageId=${packageId}`;
     return result;
 };
 
-let patientInforWhenBookingExamPackageService = (data) => {
-    return new Promise(async (resolve, reject) => {
-        try {
-            if (!data.email || !data.packageId || !data.timeType || !data.date || !data.fullname || !data.appointmentMoment || !data.phoneNumber) {
-                resolve({
-                    errCode: 1,
-                    errMessage: `Missing parameter(s)!`,
-                });
-            } else {
-                let packageInfor = await db.ExamPackage_specialty_medicalFacility.findOne({
-                    where: { id: data.packageId },
-                    attributes: {
-                        exclude: ["id", "htmlDescription", "markdownDescription", "htmlCategory", "markdownCategory", "image"],
-                    },
-                    include: [{ model: db.ComplexMedicalFacility, as: "medicalFacilityPackage", attributes: ["name"] }],
-                    raw: false,
-                });
-
-                let token = uuidv4(); // ⇨ '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d'
-
-                await sendConfirmBookingEmailService.sendAEmail({
-                    receiverEmail: data.email,
-                    patientName: data.fullname,
-                    time: data.appointmentMoment,
-                    doctorName: packageInfor.name,
-                    clinicName: "",
-                    clinicAddress: packageInfor.medicalFacilityPackage.name,
-                    language: data.language,
-                    redirectLink: buildUrlConfirmMedicalRecord(data.packageId, token),
-                });
-
-                //upsert data
-                let fullName = data.fullname.trim(); // loại bỏ khoảng trắng thừa nếu có
-                let lastSpaceIndex = fullName.lastIndexOf(" ");
-
-                let firstName = lastSpaceIndex === -1 ? fullName : fullName.slice(lastSpaceIndex + 1);
-                let lastName = lastSpaceIndex === -1 ? "" : fullName.slice(0, lastSpaceIndex);
-
-                let patient = await db.User.findOrCreate({
-                    where: { email: data.email },
-                    defaults: {
-                        email: data.email,
-                        lastName: lastName,
-                        firstName: firstName,
-                        phoneNumber: data.phoneNumber,
-                        address: data.address,
-                        gender: data.selectedGender,
-                        roleId: "R3",
-                    },
-                });
-
-                resolve({
-                    errCode: 0,
-                    errMessage: `Save patient's information successfully!`,
-                    // data: patient,
-                });
-            }
-        } catch (e) {
-            reject(e);
+let patientInforWhenBookingExamPackageService = async (data) => {
+    try {
+        // ===== 1. Validate input =====
+        if (!data.email || !data.packageId || !data.date || !data.timeType || !data.fullname || !data.phoneNumber || !data.appointmentMoment) {
+            return {
+                errCode: 1,
+                errMessage: "Missing parameter(s)!",
+            };
         }
-    });
+
+        // ===== 2. Lấy thông tin user theo email =====
+        let existingUser = await db.User.findOne({
+            where: { email: data.email },
+            raw: true,
+        });
+
+        if (!existingUser) {
+            return {
+                errCode: 2,
+                errMessage: "Tài khoản không tồn tại!",
+            };
+        }
+
+        // ===== 3. Check conflict lịch gói khám =====
+        let conflict = await db.ExamPackage_booking.findOne({
+            where: {
+                patientId: existingUser.id,
+                examPackageId: data.packageId,
+                date: data.date,
+                statusId: { [db.Sequelize.Op.ne]: "S3" },
+            },
+        });
+
+        if (conflict) {
+            return {
+                errCode: 3,
+                errMessage: "Bạn đã đặt lịch gói khám này trong ngày đã chọn!",
+            };
+        }
+
+        // ===== 4. Lấy thông tin Gói khám + Bệnh viện =====
+        let packageInfor = await db.ExamPackage_specialty_medicalFacility.findOne({
+            where: { id: data.packageId },
+            attributes: { exclude: ["image"] },
+            include: [
+                {
+                    model: db.ComplexMedicalFacility,
+                    as: "medicalFacilityPackage",
+                    attributes: {
+                        exclude: ["image"],
+                    },
+                },
+            ],
+            raw: false,
+        });
+
+        if (!packageInfor) {
+            return {
+                errCode: 4,
+                errMessage: "Gói khám không tồn tại!",
+            };
+        }
+
+        // ===== 5. Tạo token xác nhận =====
+        let token = uuidv4();
+
+        // ===== 6. Build redirect link xác nhận =====
+        let redirectLink = buildUrlConfirmBookingExamPackage(data.packageId, token);
+
+        // ===== 7. Gửi email =====
+        await sendConfirmBookingEmailService.sendAEmail({
+            receiverEmail: data.email,
+            patientName: data.fullname,
+            time: data.appointmentMoment,
+            doctorName: packageInfor.name,
+            clinicName: packageInfor.medicalFacilityPackage?.name || "",
+            clinicAddress: packageInfor.medicalFacilityPackage?.address || "",
+            language: data.language,
+            redirectLink: redirectLink,
+            isPayment: data.selectedPaymentMethod === "PM1",
+        });
+
+        // ===== 8. Tách họ tên =====
+        let fullName = data.fullname.trim();
+        let lastSpace = fullName.lastIndexOf(" ");
+        let firstName = lastSpace === -1 ? fullName : fullName.slice(lastSpace + 1);
+        let lastName = lastSpace === -1 ? "" : fullName.slice(0, lastSpace);
+
+        // ===== 9. Lấy hoặc tạo Patient =====
+        let [patient] = await db.User.findOrCreate({
+            where: { email: data.email },
+            defaults: {
+                email: data.email,
+                firstName,
+                lastName,
+                phoneNumber: data.phoneNumber,
+                address: data.address || "",
+                gender: data.selectedGender || "",
+                roleId: "R3",
+            },
+        });
+
+        // Cập nhật hồ sơ nếu cần
+        if (data.needUpdateProfileInfo === true) {
+            let updateFields = {};
+
+            if (!patient.gender && data.selectedGender) updateFields.gender = data.selectedGender;
+            if (!patient.phoneNumber && data.phoneNumber) updateFields.phoneNumber = data.phoneNumber;
+            if (!patient.address && data.address) updateFields.address = data.address;
+
+            if (Object.keys(updateFields).length > 0) {
+                await patient.update(updateFields);
+            }
+        }
+
+        // ===== 10. Lưu booking vào bảng ExamPackage_booking =====
+        await db.ExamPackage_booking.create({
+            statusId: "S1",
+            examPackageId: data.packageId,
+            patientId: patient.id,
+            date: data.date,
+            timeType: data.timeType,
+            patientPhoneNumber: data.phoneNumber,
+            patientBirthday: data.birthday,
+            patientAddress: data.address,
+            patientGender: data.selectedGender,
+            paymentMethod: data.selectedPaymentMethod || "PM3",
+            paymentStatus: "PT1",
+            paidAmount: 0,
+            token: token,
+        });
+
+        return {
+            errCode: 0,
+            errMessage: "Booking exam package created successfully!",
+        };
+    } catch (error) {
+        console.log("Error booking exam package: ", error);
+        return {
+            errCode: -1,
+            errMessage: "Server error!",
+        };
+    }
 };
 
 module.exports = {

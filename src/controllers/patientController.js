@@ -26,6 +26,18 @@ let confirmBookingAppointment = async (req, res) => {
         });
     }
 };
+let confirmBookingExamPackage = async (req, res) => {
+    try {
+        let admit = await patientService.confirmBookingExamPackageService(req.body);
+        return res.status(200).json(admit);
+    } catch (e) {
+        console.log(e);
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: "Save booking exam package form error from server!",
+        });
+    }
+};
 
 let getAppointmentHistoriesByPatientEmail = async (req, res) => {
     try {
@@ -96,6 +108,7 @@ let getPatientFrequentVisitsMedicalFacilitiesAndDoctors = async (req, res) => {
 module.exports = {
     patientInforWhenBookingTime: patientInforWhenBookingTime,
     confirmBookingAppointment: confirmBookingAppointment,
+    confirmBookingExamPackage: confirmBookingExamPackage,
     getAppointmentHistoriesByPatientEmail: getAppointmentHistoriesByPatientEmail,
     getPatientAppointmentsOverviewStatistics: getPatientAppointmentsOverviewStatistics,
     getPatientAppointmentsNearest: getPatientAppointmentsNearest,

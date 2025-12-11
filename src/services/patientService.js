@@ -251,6 +251,43 @@ let confirmBookingAppointmentService = (data) => {
     });
 };
 
+let confirmBookingExamPackageService = (data) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!data.token || !data.packageId) {
+                resolve({
+                    errCode: 1,
+                    errMessage: `Missing parameter(s): token or packageId!`,
+                });
+            } else {
+                let bookedPackage = await db.ExamPackage_booking.findOne({
+                    where: {
+                        examPackageId: data.packageId,
+                        token: data.token,
+                        statusId: "S1",
+                    },
+                });
+
+                if (bookedPackage) {
+                    bookedPackage.statusId = "S2";
+                    await bookedPackage.save();
+                    resolve({
+                        errCode: 0,
+                        errMessage: "The patient has confirmed!",
+                    });
+                } else {
+                    resolve({
+                        errCode: 2,
+                        errMessage: "Appointment has been actived or does not exist!",
+                    });
+                }
+            }
+        } catch (e) {
+            reject(e);
+        }
+    });
+};
+
 let getAppointmentHistoriesByPatientEmailService = (inputPatientEmail) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -663,6 +700,7 @@ let getPatientFrequentVisitsMedicalFacilitiesAndDoctorsService = (patientId) => 
 module.exports = {
     patientInforWhenBookingTimeService: patientInforWhenBookingTimeService,
     confirmBookingAppointmentService: confirmBookingAppointmentService,
+    confirmBookingExamPackageService: confirmBookingExamPackageService,
     getAppointmentHistoriesByPatientEmailService: getAppointmentHistoriesByPatientEmailService,
     getPatientAppointmentsOverviewStatisticsService: getPatientAppointmentsOverviewStatisticsService,
     getPatientAppointmentsNearestService: getPatientAppointmentsNearestService,

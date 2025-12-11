@@ -66,6 +66,8 @@ let initWebRoutes = (app) => {
     router.post("/api/patient-infor-when-booking-exam-package", medicalFacilityController.patientInforWhenBookingExamPackage);
     //trang web xác nhận chốt đặt lịch
     router.post("/api/confirm-booking-appointment", patientController.confirmBookingAppointment);
+    //xác nhận chốt đặt gói khám
+    router.post("/api/confirm-booking-exam-package", patientController.confirmBookingExamPackage);
     //lưu thông tin một chuyên khoa
     router.post("/api/create-new-specialty", specialtyController.createSpecialty);
     //lấy các specialties cho trang home
