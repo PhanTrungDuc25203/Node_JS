@@ -1,56 +1,64 @@
-'use strict';
+"use strict";
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
     async up(queryInterface, Sequelize) {
         // tên bảng viết hoa hay thường thì mysql tự chuyển thành thường
-        await queryInterface.createTable('ComplexMedicalFacilities', {
+        await queryInterface.createTable("ComplexMedicalFacilities", {
             id: {
                 allowNull: false,
                 autoIncrement: true,
                 primaryKey: true,
-                type: Sequelize.INTEGER
+                type: Sequelize.INTEGER,
             },
 
             name: {
-                type: Sequelize.STRING
+                type: Sequelize.STRING,
             },
             provinceId: {
-                type: Sequelize.STRING
+                type: Sequelize.STRING,
             },
             address: {
-                type: Sequelize.STRING
+                type: Sequelize.STRING,
+            },
+            latitude: {
+                type: Sequelize.DECIMAL(10, 7),
+                allowNull: false,
+            },
+            longitude: {
+                type: Sequelize.DECIMAL(10, 7),
+                allowNull: false,
             },
             htmlDescription: {
                 allowNull: false,
-                type: Sequelize.TEXT('long')
+                type: Sequelize.TEXT("long"),
             },
             markdownDescription: {
                 allowNull: false,
-                type: Sequelize.TEXT('long')
+                type: Sequelize.TEXT("long"),
             },
             htmlEquipment: {
                 allowNull: false,
-                type: Sequelize.TEXT('long')
+                type: Sequelize.TEXT("long"),
             },
             markdownEquipment: {
                 allowNull: false,
-                type: Sequelize.TEXT('long')
+                type: Sequelize.TEXT("long"),
             },
             image: {
-                type: Sequelize.BLOB('long')
+                type: Sequelize.BLOB("long"),
             },
 
             createdAt: {
                 allowNull: false,
-                type: Sequelize.DATE
+                type: Sequelize.DATE,
             },
             updatedAt: {
                 allowNull: false,
-                type: Sequelize.DATE
-            }
+                type: Sequelize.DATE,
+            },
         });
     },
     async down(queryInterface, Sequelize) {
-        await queryInterface.dropTable('ComplexMedicalFacilities');
-    }
+        await queryInterface.dropTable("ComplexMedicalFacilities");
+    },
 };

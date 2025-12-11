@@ -57,6 +57,7 @@ let handleUserLogin = (email, password) => {
                             id: user.id,
                             email: user.email,
                             roleId: user.roleId,
+                            positionId: user.positionId,
                             firstName: user.firstName,
                             lastName: user.lastName,
                         },
