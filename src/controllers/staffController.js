@@ -13,6 +13,20 @@ let createResultTemplate = async (req, res) => {
     }
 };
 
+let getResultPendingExamPackage = async (req, res) => {
+    try {
+        let response = await staffService.getResultPendingExamPackageService(req.query.medicalFacilityId);
+        return res.status(200).json(response);
+    } catch (e) {
+        console.log(e);
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: "Get all exam packages had pending result error from server!",
+        });
+    }
+};
+
 module.exports = {
     createResultTemplate: createResultTemplate,
+    getResultPendingExamPackage: getResultPendingExamPackage,
 };

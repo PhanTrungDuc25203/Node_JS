@@ -17,6 +17,7 @@ let getEliteDoctorForHomePage = (limitEliteDoctor) => {
                 limit: limitEliteDoctor,
                 where: {
                     roleId: "R2",
+                    positionId: { [Op.ne]: "P5" },
                 },
                 order: [["createdAt", "DESC"]],
                 attributes: {

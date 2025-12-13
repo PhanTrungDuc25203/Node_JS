@@ -129,6 +129,8 @@ let initWebRoutes = (app) => {
 
     //lưu biểu mẫu kết quả khám của gói khám
     router.post("/api/exam-package/result-template", staffController.createResultTemplate);
+    //lấy các gói khám đang có bệnh nhân chờ kết quả
+    router.get("/api/exam-package/pending-result", staffController.getResultPendingExamPackage);
 
     return app.use("/", router);
 };

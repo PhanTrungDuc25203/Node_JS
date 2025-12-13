@@ -48,6 +48,67 @@ let createResultTemplateService = (data) => {
     });
 };
 
+let getResultPendingExamPackageService = (medicalFacilityId) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!medicalFacilityId) {
+                return resolve({
+                    errCode: 1,
+                    errMessage: "Missing required parameters!",
+                });
+            }
+
+            let examPackageData = await db.ExamPackage_specialty_medicalFacility.findAll({
+                where: { medicalFacilityId: medicalFacilityId },
+                attributes: {
+                    exclude: ["createdAt", "updatedAt", "image", "htmlDescription", "markdownDescription", "htmlCategory", "markdownCategory"],
+                },
+                include: [
+                    {
+                        model: db.Allcode,
+                        as: "priceDataForPackage",
+                        attributes: ["value_Eng", "value_Vie"],
+                    },
+                    {
+                        model: db.ComplexMedicalFacility,
+                        as: "medicalFacilityPackage",
+                        attributes: ["id", "name", "address"],
+                    },
+                    {
+                        model: db.ExamPackage_booking,
+                        as: "bookings",
+                        attributes: {
+                            exclude: ["createdAt", "updatedAt"],
+                        },
+                        include: [
+                            {
+                                model: db.User,
+                                as: "patientBookingExamPackageData",
+                                attributes: {
+                                    exclude: ["image", "updatedAt", "createdAt"],
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        model: db.ExamPackage_result_template,
+                        as: "resultTemplates",
+                    },
+                ],
+            });
+
+            resolve({
+                errCode: 0,
+                errMessage: "Create template successfully!",
+                examPackageData: examPackageData,
+            });
+        } catch (e) {
+            reject(e);
+        }
+    });
+};
+
 module.exports = {
     createResultTemplateService: createResultTemplateService,
+    getResultPendingExamPackageService: getResultPendingExamPackageService,
 };
