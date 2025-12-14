@@ -5,6 +5,7 @@ module.exports = (sequelize, DataTypes) => {
     class MedicalFacility_staff extends Model {
         static associate(models) {
             // define association here
+            MedicalFacility_staff.belongsTo(models.ComplexMedicalFacility, { foreignKey: "medicalFacilityId", targetKey: "id", as: "medicalFacilityStaffAndSpecialty" });
         }
     }
 
@@ -12,7 +13,7 @@ module.exports = (sequelize, DataTypes) => {
         {
             staffId: DataTypes.INTEGER,
             medicalFacilityId: DataTypes.INTEGER,
-            role: DataTypes.STRING,
+            specialtyId: DataTypes.INTEGER,
         },
         {
             sequelize,

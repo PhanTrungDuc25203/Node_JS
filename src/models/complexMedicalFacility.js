@@ -10,6 +10,7 @@ module.exports = (sequelize, DataTypes) => {
         static associate(models) {
             ComplexMedicalFacility.hasMany(models.MedicalFacilitySpecialtyArea, { foreignKey: "medicalFacilityId", as: "medicalFacilitySpecialtyData" });
             ComplexMedicalFacility.hasMany(models.Doctor_specialty_medicalFacility, { foreignKey: "medicalFacilityId", as: "medicalFacilityDoctorAndSpecialty" });
+            ComplexMedicalFacility.hasMany(models.MedicalFacility_staff, { foreignKey: "medicalFacilityId", as: "medicalFacilityStaffAndSpecialty" });
             ComplexMedicalFacility.belongsTo(models.Allcode, { foreignKey: "provinceId", targetKey: "keyMap", as: "provinceTypeDataForFacility" });
             ComplexMedicalFacility.hasMany(models.ExamPackage_specialty_medicalFacility, { foreignKey: "medicalFacilityId", as: "medicalFacilityPackage" });
         }

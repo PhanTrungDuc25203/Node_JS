@@ -86,94 +86,115 @@ let saveInforAndArticleOfADoctorService = (inputData) => {
                     errMesage: "Missing parameters!",
                 });
             } else {
-                //upsert to Markdown
-                if (inputData.action === "CREATE") {
-                    await db.ArticleMarkdown.create({
-                        htmlContent: inputData.htmlContent,
-                        markdownContent: inputData.markdownContent,
-                        description: inputData.description,
-                        doctorId: inputData.doctorId,
+                let doctor = await db.User.findOne({
+                    where: { id: inputData.doctorId },
+                    attributes: {
+                        exclude: ["password", "image"],
+                    },
+                });
+
+                if (doctor && doctor.positionId === "P5" && doctor.roleId === "R2") {
+                    await db.MedicalFacility_staff.create({
+                        staffId: inputData.doctorId,
+                        specialtyId: inputData.specialtyId,
+                        medicalFacilityId: inputData.selectedMedicalFacility,
                     });
-                } else if (inputData.action === "EDIT") {
-                    let needEdittingDoctorArticle = await db.ArticleMarkdown.findOne({
+
+                    resolve({
+                        errCode: 0,
+                        errMessage: "Save role for nurse / staff successfully!",
+                    });
+                }
+                if (doctor && doctor.positionId !== "P5" && doctor.roleId === "R2") {
+                    //upsert to Markdown
+                    if (inputData.action === "CREATE") {
+                        await db.ArticleMarkdown.create({
+                            htmlContent: inputData.htmlContent,
+                            markdownContent: inputData.markdownContent,
+                            description: inputData.description,
+                            doctorId: inputData.doctorId,
+                        });
+                    } else if (inputData.action === "EDIT") {
+                        let needEdittingDoctorArticle = await db.ArticleMarkdown.findOne({
+                            where: { doctorId: inputData.doctorId },
+                            raw: false,
+                        });
+                        if (needEdittingDoctorArticle) {
+                            needEdittingDoctorArticle.htmlContent = inputData.htmlContent;
+                            needEdittingDoctorArticle.markdownContent = inputData.markdownContent;
+                            needEdittingDoctorArticle.description = inputData.description;
+                            await needEdittingDoctorArticle.save();
+                        }
+                    }
+
+                    //upsert to Doctor_infor table in DB
+                    let doctorInfor = await db.Doctor_infor.findOne({
                         where: { doctorId: inputData.doctorId },
                         raw: false,
                     });
-                    if (needEdittingDoctorArticle) {
-                        needEdittingDoctorArticle.htmlContent = inputData.htmlContent;
-                        needEdittingDoctorArticle.markdownContent = inputData.markdownContent;
-                        needEdittingDoctorArticle.description = inputData.description;
-                        await needEdittingDoctorArticle.save();
-                    }
-                }
-
-                //upsert to Doctor_infor table in DB
-                let doctorInfor = await db.Doctor_infor.findOne({
-                    where: { doctorId: inputData.doctorId },
-                    raw: false,
-                });
-                if (doctorInfor) {
-                    //update
-                    doctorInfor.doctorId = inputData.doctorId;
-                    doctorInfor.priceId = inputData.selectedPrice;
-                    doctorInfor.provinceId = inputData.selectedProvince;
-                    doctorInfor.paymentId = inputData.selectedPaymentMethod;
-                    doctorInfor.clinicAddress = inputData.clinicAddress;
-                    doctorInfor.clinicName = inputData.clinicName;
-                    doctorInfor.note = inputData.note;
-                    doctorInfor.specialtyId = inputData.specialtyId;
-                    doctorInfor.clinicId = inputData.clinicId;
-                    await doctorInfor.save();
-                } else {
-                    //create
-                    await db.Doctor_infor.create({
-                        doctorId: inputData.doctorId,
-                        priceId: inputData.selectedPrice,
-                        provinceId: inputData.selectedProvince,
-                        paymentId: inputData.selectedPaymentMethod,
-                        clinicAddress: inputData.clinicAddress,
-                        clinicName: inputData.clinicName,
-                        note: inputData.note,
-                        specialtyId: inputData.specialtyId,
-                        clinicId: inputData.clinicId,
-                    });
-                }
-
-                if (inputData.selectedMedicalFacility) {
-                    if (inputData.action === "CREATE") {
-                        // Tạo mới bản ghi
-                        await db.Doctor_specialty_medicalFacility.create({
+                    if (doctorInfor) {
+                        //update
+                        doctorInfor.doctorId = inputData.doctorId;
+                        doctorInfor.priceId = inputData.selectedPrice;
+                        doctorInfor.provinceId = inputData.selectedProvince;
+                        doctorInfor.paymentId = inputData.selectedPaymentMethod;
+                        doctorInfor.clinicAddress = inputData.clinicAddress;
+                        doctorInfor.clinicName = inputData.clinicName;
+                        doctorInfor.note = inputData.note;
+                        doctorInfor.specialtyId = inputData.specialtyId;
+                        doctorInfor.clinicId = inputData.clinicId;
+                        await doctorInfor.save();
+                    } else {
+                        //create
+                        await db.Doctor_infor.create({
                             doctorId: inputData.doctorId,
+                            priceId: inputData.selectedPrice,
+                            provinceId: inputData.selectedProvince,
+                            paymentId: inputData.selectedPaymentMethod,
+                            clinicAddress: inputData.clinicAddress,
+                            clinicName: inputData.clinicName,
+                            note: inputData.note,
                             specialtyId: inputData.specialtyId,
-                            medicalFacilityId: inputData.selectedMedicalFacility,
+                            clinicId: inputData.clinicId,
                         });
-                    } else if (inputData.action === "EDIT") {
-                        // Tìm và cập nhật bản ghi
-                        let doctorMedicalFacility = await db.Doctor_specialty_medicalFacility.findOne({
-                            where: {
-                                doctorId: inputData.doctorId,
-                                specialtyId: inputData.specialtyId,
-                            },
-                            raw: false,
-                        });
-                        if (doctorMedicalFacility) {
-                            doctorMedicalFacility.medicalFacilityId = inputData.selectedMedicalFacility;
-                            await doctorMedicalFacility.save();
-                        } else {
-                            // Nếu không tìm thấy, tạo mới bản ghi
+                    }
+
+                    if (inputData.selectedMedicalFacility) {
+                        if (inputData.action === "CREATE") {
+                            // Tạo mới bản ghi
                             await db.Doctor_specialty_medicalFacility.create({
                                 doctorId: inputData.doctorId,
                                 specialtyId: inputData.specialtyId,
                                 medicalFacilityId: inputData.selectedMedicalFacility,
                             });
+                        } else if (inputData.action === "EDIT") {
+                            // Tìm và cập nhật bản ghi
+                            let doctorMedicalFacility = await db.Doctor_specialty_medicalFacility.findOne({
+                                where: {
+                                    doctorId: inputData.doctorId,
+                                    specialtyId: inputData.specialtyId,
+                                },
+                                raw: false,
+                            });
+                            if (doctorMedicalFacility) {
+                                doctorMedicalFacility.medicalFacilityId = inputData.selectedMedicalFacility;
+                                await doctorMedicalFacility.save();
+                            } else {
+                                // Nếu không tìm thấy, tạo mới bản ghi
+                                await db.Doctor_specialty_medicalFacility.create({
+                                    doctorId: inputData.doctorId,
+                                    specialtyId: inputData.specialtyId,
+                                    medicalFacilityId: inputData.selectedMedicalFacility,
+                                });
+                            }
                         }
                     }
-                }
 
-                resolve({
-                    errCode: 0,
-                    errMessage: "Save article for doctor successfully!",
-                });
+                    resolve({
+                        errCode: 0,
+                        errMessage: "Save article for doctor successfully!",
+                    });
+                }
             }
         } catch (e) {
             reject(e);

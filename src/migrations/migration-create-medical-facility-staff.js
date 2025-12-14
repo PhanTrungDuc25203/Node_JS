@@ -21,10 +21,9 @@ module.exports = {
                 allowNull: false,
             },
 
-            role: {
-                type: Sequelize.STRING,
+            specialtyId: {
+                type: Sequelize.INTEGER,
                 allowNull: false,
-                defaultValue: "STAFF",
             },
 
             createdAt: {

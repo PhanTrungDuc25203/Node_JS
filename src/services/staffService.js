@@ -59,7 +59,9 @@ let getResultPendingExamPackageService = (medicalFacilityId) => {
             }
 
             let examPackageData = await db.ExamPackage_specialty_medicalFacility.findAll({
-                where: { medicalFacilityId: medicalFacilityId },
+                where: {
+                    medicalFacilityId: medicalFacilityId,
+                },
                 attributes: {
                     exclude: ["createdAt", "updatedAt", "image", "htmlDescription", "markdownDescription", "htmlCategory", "markdownCategory"],
                 },
@@ -108,7 +110,124 @@ let getResultPendingExamPackageService = (medicalFacilityId) => {
     });
 };
 
+let saveExamPackageResultService = (resultData) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!resultData) {
+                return resolve({
+                    errCode: 1,
+                    errMessage: "Missing required parameters!",
+                });
+            }
+
+            let newResult = await db.ExamPackage_result.create({
+                bookingId: resultData.bookingId,
+                template: resultData.template,
+                staffId: resultData.staffId,
+                result: resultData.results,
+            });
+
+            let needUpdatedBooking = await db.ExamPackage_booking.findOne({
+                where: {
+                    id: resultData.bookingId,
+                },
+            });
+
+            if (needUpdatedBooking) {
+                (needUpdatedBooking.statusId = "S3"), needUpdatedBooking.save();
+            }
+
+            resolve({
+                errCode: 0,
+                errMessage: "Create exam package result successfully!",
+                newResult: newResult,
+            });
+
+            resolve({
+                errCode: 0,
+                errMessage: "Save exam package result successfully!",
+            });
+        } catch (e) {
+            reject(e);
+        }
+    });
+};
+
+let getExamPackageResultService = (bookingId) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!bookingId) {
+                return resolve({
+                    errCode: 1,
+                    errMessage: "Missing required parameters!",
+                });
+            }
+
+            let examPackageResult = await db.ExamPackage_result.findOne({
+                where: {
+                    bookingId: bookingId,
+                },
+            });
+
+            resolve({
+                errCode: 0,
+                errMessage: "Create template successfully!",
+                data: examPackageResult,
+            });
+        } catch (e) {
+            reject(e);
+        }
+    });
+};
+
+let getStaffInfoService = (id) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!id) {
+                return resolve({
+                    errCode: 1,
+                    errMessage: "Missing required parameters!",
+                });
+            }
+
+            let data = await db.MedicalFacility_staff.findOne({
+                where: {
+                    staffId: id,
+                },
+                attributes: {
+                    exclude: [""],
+                },
+                include: [
+                    {
+                        model: db.ComplexMedicalFacility,
+                        as: "medicalFacilityStaffAndSpecialty",
+                        attributes: ["id", "name", "address"],
+                    },
+                ],
+                raw: false,
+                nest: true,
+            });
+
+            if (data && data.image) {
+                data.image = Buffer.from(data.image, "base64").toString("binary");
+            }
+
+            if (!data) data = {};
+
+            resolve({
+                errCode: 0,
+                data: data,
+            });
+        } catch (e) {
+            reject(e);
+        }
+    });
+};
+
 module.exports = {
     createResultTemplateService: createResultTemplateService,
     getResultPendingExamPackageService: getResultPendingExamPackageService,
+    saveExamPackageResultService: saveExamPackageResultService,
+    getExamPackageResultService: getExamPackageResultService,
+    getStaffInfoService: getStaffInfoService,
 };

@@ -131,6 +131,12 @@ let initWebRoutes = (app) => {
     router.post("/api/exam-package/result-template", staffController.createResultTemplate);
     //lấy các gói khám đang có bệnh nhân chờ kết quả
     router.get("/api/exam-package/pending-result", staffController.getResultPendingExamPackage);
+    //lưu kết quả của gói khám
+    router.post("/api/exam-package/exam-result", staffController.saveExamPackageResult);
+    //lấy kết quả khám của một gói khám
+    router.get("/api/exam-package/exam-result", staffController.getExamPackageResult);
+    //lấy thông tin nhân viên bệnh viện
+    router.get("/api/get-a-particular-staff-infor", staffController.getStaffInfo);
 
     return app.use("/", router);
 };

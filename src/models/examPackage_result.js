@@ -9,9 +9,9 @@ module.exports = (sequelize, DataTypes) => {
     ExamPackage_result.init(
         {
             bookingId: DataTypes.INTEGER,
-            templateId: DataTypes.INTEGER,
+            template: DataTypes.JSON,
             staffId: DataTypes.INTEGER,
-            result: DataTypes.TEXT("long"),
+            result: DataTypes.JSON,
             status: DataTypes.STRING,
         },
         {

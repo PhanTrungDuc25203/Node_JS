@@ -15,8 +15,8 @@ module.exports = {
                 allowNull: false,
             },
 
-            templateId: {
-                type: Sequelize.INTEGER,
+            template: {
+                type: Sequelize.JSON,
                 allowNull: false,
             },
 
@@ -26,14 +26,14 @@ module.exports = {
             },
 
             result: {
-                type: Sequelize.TEXT("long"),
+                type: Sequelize.JSON,
                 allowNull: false,
             },
 
             status: {
                 type: Sequelize.STRING,
                 allowNull: false,
-                defaultValue: "PENDING",
+                defaultValue: "DONE",
             },
 
             createdAt: {
