@@ -65,10 +65,24 @@ let getStaffInfo = async (req, res) => {
     }
 };
 
+let updateExamPackageBookingDone = async (req, res) => {
+    try {
+        let info = await staffService.updateExamPackageBookingDoneService(req.query.bookingId);
+        return res.status(200).json(info);
+    } catch (e) {
+        console.log(e);
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: "Update exam package booking done is error from server!",
+        });
+    }
+};
+
 module.exports = {
     createResultTemplate: createResultTemplate,
     getResultPendingExamPackage: getResultPendingExamPackage,
     saveExamPackageResult: saveExamPackageResult,
     getExamPackageResult: getExamPackageResult,
     getStaffInfo: getStaffInfo,
+    updateExamPackageBookingDone: updateExamPackageBookingDone,
 };

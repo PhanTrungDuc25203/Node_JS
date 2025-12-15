@@ -90,6 +90,10 @@ let getResultPendingExamPackageService = (medicalFacilityId) => {
                                     exclude: ["image", "updatedAt", "createdAt"],
                                 },
                             },
+                            {
+                                model: db.ExamPackage_result,
+                                as: "examPackageResult",
+                            },
                         ],
                     },
                     {
@@ -125,17 +129,19 @@ let saveExamPackageResultService = (resultData) => {
                 template: resultData.template,
                 staffId: resultData.staffId,
                 result: resultData.results,
+                status: resultData.status,
             });
 
-            let needUpdatedBooking = await db.ExamPackage_booking.findOne({
-                where: {
-                    id: resultData.bookingId,
-                },
-            });
+            // let needUpdatedBooking = await db.ExamPackage_booking.findOne({
+            //     where: {
+            //         id: resultData.bookingId,
+            //     },
+            // });
 
-            if (needUpdatedBooking) {
-                (needUpdatedBooking.statusId = "S3"), needUpdatedBooking.save();
-            }
+            // if (needUpdatedBooking) {
+            //     needUpdatedBooking.statusId = "S3";
+            //     needUpdatedBooking.save();
+            // }
 
             resolve({
                 errCode: 0,
@@ -224,10 +230,41 @@ let getStaffInfoService = (id) => {
     });
 };
 
+let updateExamPackageBookingDoneService = (bookingId) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!bookingId) {
+                return resolve({
+                    errCode: 1,
+                    errMessage: "Missing required parameters!",
+                });
+            }
+
+            let needUpdatedBooking = await db.ExamPackage_booking.findOne({
+                where: {
+                    id: bookingId,
+                },
+            });
+
+            if (needUpdatedBooking) {
+                needUpdatedBooking.statusId = "S3";
+                needUpdatedBooking.save();
+            }
+
+            resolve({
+                errCode: 0,
+            });
+        } catch (e) {
+            reject(e);
+        }
+    });
+};
+
 module.exports = {
     createResultTemplateService: createResultTemplateService,
     getResultPendingExamPackageService: getResultPendingExamPackageService,
     saveExamPackageResultService: saveExamPackageResultService,
     getExamPackageResultService: getExamPackageResultService,
     getStaffInfoService: getStaffInfoService,
+    updateExamPackageBookingDoneService: updateExamPackageBookingDoneService,
 };

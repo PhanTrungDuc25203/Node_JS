@@ -139,6 +139,8 @@ let initWebRoutes = (app) => {
     router.get("/api/get-a-particular-staff-infor", staffController.getStaffInfo);
     //lấy thông tin lịch khám gói khám cho bệnh nhân
     router.get("/api/patient/exam-package", patientController.getPatientExamPackageTime);
+    //cập nhật trạng thái đã hoàn thành cho lịch khám của gói khám
+    router.patch("/api/exam-package/booking-done", staffController.updateExamPackageBookingDone);
 
     return app.use("/", router);
 };
