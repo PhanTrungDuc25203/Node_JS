@@ -137,6 +137,8 @@ let initWebRoutes = (app) => {
     router.get("/api/exam-package/exam-result", staffController.getExamPackageResult);
     //lấy thông tin nhân viên bệnh viện
     router.get("/api/get-a-particular-staff-infor", staffController.getStaffInfo);
+    //lấy thông tin lịch khám gói khám cho bệnh nhân
+    router.get("/api/patient/exam-package", patientController.getPatientExamPackageTime);
 
     return app.use("/", router);
 };

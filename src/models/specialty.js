@@ -1,7 +1,5 @@
-'use strict';
-const {
-    Model
-} = require('sequelize');
+"use strict";
+const { Model } = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
     class Specialty extends Model {
         /**
@@ -12,19 +10,23 @@ module.exports = (sequelize, DataTypes) => {
         static associate(models) {
             // define association here
             //nơi định nghĩa các mối quan hệ, 1-n,1-1,n-1,n-n?...
-            Specialty.hasMany(models.Doctor_infor, { foreignKey: 'specialtyId', as: 'belongToSpecialty' })
-            Specialty.hasOne(models.Doctor_specialty_medicalFacility, { foreignKey: 'specialtyId' })
-            Specialty.hasMany(models.MedicalFacilitySpecialtyArea, { foreignKey: 'specialtyId', as: 'medicalFacilityHaveSpecialty' })
+            Specialty.hasMany(models.Doctor_infor, { foreignKey: "specialtyId", as: "belongToSpecialty" });
+            Specialty.hasOne(models.Doctor_specialty_medicalFacility, { foreignKey: "specialtyId" });
+            Specialty.hasMany(models.MedicalFacilitySpecialtyArea, { foreignKey: "specialtyId", as: "medicalFacilityHaveSpecialty" });
+            Specialty.hasMany(models.ExamPackage_specialty_medicalFacility, { foreignKey: "specialtyId", as: "examPackageHaveSpecialty" });
         }
     }
-    Specialty.init({
-        name: DataTypes.STRING,
-        htmlDescription: DataTypes.TEXT,
-        markdownDescription: DataTypes.TEXT,
-        specialtyImage: DataTypes.TEXT,
-    }, {
-        sequelize,
-        modelName: 'Specialty',
-    });
+    Specialty.init(
+        {
+            name: DataTypes.STRING,
+            htmlDescription: DataTypes.TEXT,
+            markdownDescription: DataTypes.TEXT,
+            specialtyImage: DataTypes.TEXT,
+        },
+        {
+            sequelize,
+            modelName: "Specialty",
+        }
+    );
     return Specialty;
 };

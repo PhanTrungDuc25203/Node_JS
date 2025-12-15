@@ -4,6 +4,10 @@ module.exports = (sequelize, DataTypes) => {
     class ExamPackage_result extends Model {
         static associate(models) {
             // define association here
+            ExamPackage_result.belongsTo(models.ExamPackage_booking, {
+                foreignKey: "bookingId",
+                as: "booking",
+            });
         }
     }
     ExamPackage_result.init(

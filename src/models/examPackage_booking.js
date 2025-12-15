@@ -18,6 +18,11 @@ module.exports = (sequelize, DataTypes) => {
                 as: "patientBookingExamPackageData",
                 foreignKey: "patientId",
             });
+            ExamPackage_booking.hasOne(models.ExamPackage_result, {
+                foreignKey: "bookingId",
+                as: "examPackageResult",
+            });
+            ExamPackage_booking.belongsTo(models.Allcode, { foreignKey: "timeType", targetKey: "keyMap", as: "examPackageTimeTypeData" });
         }
     }
     ExamPackage_booking.init(

@@ -697,6 +697,68 @@ let getPatientFrequentVisitsMedicalFacilitiesAndDoctorsService = (patientId) => 
     });
 };
 
+let getPatientExamPackageTimeService = (patientId) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!patientId) {
+                resolve({
+                    errCode: 1,
+                    errMessage: `Missing parameter(s): patientId!`,
+                });
+            }
+
+            let bookingData = await db.ExamPackage_booking.findAll({
+                where: {
+                    patientId: patientId,
+                },
+                include: [
+                    {
+                        model: db.ExamPackage_specialty_medicalFacility,
+                        as: "examPackage",
+                        attributes: {
+                            exclude: ["htmlDescription", "markdownDescription", "htmlCategory", "markdownCategory", "image"],
+                        },
+                        include: [
+                            {
+                                model: db.ComplexMedicalFacility,
+                                as: "medicalFacilityPackage",
+                                attributes: {
+                                    exclude: ["htmlDescription", "markdownDescription", "htmlEquipment", "markdownEquipment", "image"],
+                                },
+                            },
+                            {
+                                model: db.Specialty,
+                                as: "examPackageHaveSpecialty",
+                                attributes: {
+                                    exclude: ["specialtyImage"],
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        model: db.ExamPackage_result,
+                        as: "examPackageResult",
+                    },
+                    {
+                        model: db.Allcode,
+                        as: "examPackageTimeTypeData",
+                    },
+                ],
+            });
+
+            if (bookingData) {
+                resolve({
+                    errCode: 0,
+                    errMessage: `Get patient's exampackage time data successfully!`,
+                    bookingData: bookingData,
+                });
+            }
+        } catch (e) {
+            reject(e);
+        }
+    });
+};
+
 module.exports = {
     patientInforWhenBookingTimeService: patientInforWhenBookingTimeService,
     confirmBookingAppointmentService: confirmBookingAppointmentService,
@@ -706,4 +768,5 @@ module.exports = {
     getPatientAppointmentsNearestService: getPatientAppointmentsNearestService,
     getPatientAppointmentsMonthlyVisitsService: getPatientAppointmentsMonthlyVisitsService,
     getPatientFrequentVisitsMedicalFacilitiesAndDoctorsService: getPatientFrequentVisitsMedicalFacilitiesAndDoctorsService,
+    getPatientExamPackageTimeService: getPatientExamPackageTimeService,
 };

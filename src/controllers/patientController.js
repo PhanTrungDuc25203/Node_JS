@@ -105,6 +105,19 @@ let getPatientFrequentVisitsMedicalFacilitiesAndDoctors = async (req, res) => {
     }
 };
 
+let getPatientExamPackageTime = async (req, res) => {
+    try {
+        let data = await patientService.getPatientExamPackageTimeService(req.query.patientId);
+        return res.status(200).json(data);
+    } catch (e) {
+        console.log(e);
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: "Get patient's exam package time error from server!",
+        });
+    }
+};
+
 module.exports = {
     patientInforWhenBookingTime: patientInforWhenBookingTime,
     confirmBookingAppointment: confirmBookingAppointment,
@@ -114,4 +127,5 @@ module.exports = {
     getPatientAppointmentsNearest: getPatientAppointmentsNearest,
     getPatientAppointmentsMonthlyVisits: getPatientAppointmentsMonthlyVisits,
     getPatientFrequentVisitsMedicalFacilitiesAndDoctors: getPatientFrequentVisitsMedicalFacilitiesAndDoctors,
+    getPatientExamPackageTime: getPatientExamPackageTime,
 };

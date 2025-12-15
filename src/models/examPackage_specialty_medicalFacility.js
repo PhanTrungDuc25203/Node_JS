@@ -20,6 +20,7 @@ module.exports = (sequelize, DataTypes) => {
                 as: "resultTemplates",
                 foreignKey: "examPackageId",
             });
+            ExamPackage_specialty_medicalFacility.belongsTo(models.Specialty, { foreignKey: "specialtyId", targetKey: "id", as: "examPackageHaveSpecialty" });
         }
     }
     ExamPackage_specialty_medicalFacility.init(
