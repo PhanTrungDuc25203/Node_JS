@@ -62,7 +62,7 @@ let initWebRoutes = (app) => {
     router.get("/api/all-medical-services-filter-search", searchController.allMedicalServiceFilterSearch);
 
     //lưu bệnh nhân và thông tin đặt lịch khám với bác sĩ
-    router.post("/api/patient-infor-when-booking-time", authMiddleware, authorizeRoles("R3"), patientController.patientInforWhenBookingTime);
+    router.post("/api/patient-infor-when-booking-time", authMiddleware, authorizeRoles("R3"), patientController.handlePatientBookingAppointment);
     router.post("/api/patient-infor-when-booking-exam-package", medicalFacilityController.patientInforWhenBookingExamPackage);
     //trang web xác nhận chốt đặt lịch
     router.post("/api/confirm-booking-appointment", patientController.confirmBookingAppointment);

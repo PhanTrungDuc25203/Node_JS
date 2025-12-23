@@ -171,7 +171,7 @@ let buildUrlPaymentPage = (doctorId, token) => {
 //     }
 // };
 
-let patientInforWhenBookingTimeService = async (data) => {
+let handlePatientBookingAppointmentService = async (data) => {
     const transaction = await db.sequelize.transaction();
 
     try {
@@ -923,7 +923,7 @@ let getPatientExamPackageTimeService = (patientId) => {
 };
 
 module.exports = {
-    patientInforWhenBookingTimeService: patientInforWhenBookingTimeService,
+    handlePatientBookingAppointmentService: handlePatientBookingAppointmentService,
     confirmBookingAppointmentService: confirmBookingAppointmentService,
     confirmBookingExamPackageService: confirmBookingExamPackageService,
     getAppointmentHistoriesByPatientEmailService: getAppointmentHistoriesByPatientEmailService,

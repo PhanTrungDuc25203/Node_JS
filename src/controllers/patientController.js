@@ -1,9 +1,9 @@
 import patientService from "../services/patientService";
 
-let patientInforWhenBookingTime = async (req, res) => {
+let handlePatientBookingAppointment = async (req, res) => {
     try {
         let io = req.app.get("io");
-        let infor = await patientService.patientInforWhenBookingTimeService(req.body, io);
+        let infor = await patientService.handlePatientBookingAppointmentService(req.body, io);
         return res.status(200).json(infor);
     } catch (e) {
         console.log(e);
@@ -119,7 +119,7 @@ let getPatientExamPackageTime = async (req, res) => {
 };
 
 module.exports = {
-    patientInforWhenBookingTime: patientInforWhenBookingTime,
+    handlePatientBookingAppointment: handlePatientBookingAppointment,
     confirmBookingAppointment: confirmBookingAppointment,
     confirmBookingExamPackage: confirmBookingExamPackage,
     getAppointmentHistoriesByPatientEmail: getAppointmentHistoriesByPatientEmail,
