@@ -967,7 +967,7 @@ let getDoctorStatisticMonthlyPatientsService = (doctorId) => {
             for (let m = startMonth; m <= endMonth; m++) {
                 const found = monthlyRevenueRaw.find((x) => Number(x.month) === m);
                 monthlyRevenue.push({
-                    month: `Tháng ${m}`,
+                    month: `${m}`,
                     revenue: found ? Number(found.revenue) : 0,
                     patients: found ? Number(found.patients) : 0,
                 });
