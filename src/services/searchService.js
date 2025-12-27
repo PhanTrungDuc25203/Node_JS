@@ -130,7 +130,12 @@ let searchDoctor = async (searchterm) => {
         ],
     };
 
-    let userBaseWhere = { roleId: "R2" };
+    let userBaseWhere = {
+        roleId: "R2",
+        positionId: {
+            [Op.ne]: "P5",
+        },
+    };
 
     let userSearch = await searchWithFallback(
         db.User,
