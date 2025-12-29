@@ -176,7 +176,7 @@ let handlePatientBookingAppointmentService = async (data) => {
 
     try {
         // ===== 1. Validate input =====
-        if (!data.email || !data.doctorId || !data.timeType || !data.date || !data.fullname || !data.appointmentMoment) {
+        if (!data.email || !data.doctorId || !data.timeType || !data.date || !data.fullname || !data.appointmentMoment || !data.phoneNumber || !data.address || !data.selectedGender || !data.selectedPaymentMethod) {
             return {
                 errCode: 1,
                 errMessage: "Missing parameter(s)!",
