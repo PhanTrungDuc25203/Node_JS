@@ -396,7 +396,7 @@ let buildUrlConfirmBookingExamPackage = (packageId, token) => {
     return result;
 };
 
-let patientInforWhenBookingExamPackageService = async (data) => {
+let handlePatientBookingExamPackageService = async (data) => {
     try {
         // ===== 1. Validate input =====
         if (!data.email || !data.packageId || !data.date || !data.timeType || !data.fullname || !data.phoneNumber || !data.appointmentMoment) {
@@ -548,5 +548,5 @@ module.exports = {
     bulkCreateTimeframesForExamPackageScheduleService: bulkCreateTimeframesForExamPackageScheduleService,
     getAllExamPackageService: getAllExamPackageService,
     getPackageScheduleByDateService: getPackageScheduleByDateService,
-    patientInforWhenBookingExamPackageService: patientInforWhenBookingExamPackageService,
+    handlePatientBookingExamPackageService: handlePatientBookingExamPackageService,
 };

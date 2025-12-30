@@ -96,9 +96,9 @@ let getPackageScheduleByDate = async (req, res) => {
     }
 };
 
-let patientInforWhenBookingExamPackage = async (req, res) => {
+let handlePatientBookingExamPackage = async (req, res) => {
     try {
-        let infor = await medicalFacilityService.patientInforWhenBookingExamPackageService(req.body);
+        let infor = await medicalFacilityService.handlePatientBookingExamPackageService(req.body);
         return res.status(200).json(infor);
     } catch (e) {
         console.log(e);
@@ -116,5 +116,5 @@ module.exports = {
     createTimeframesForExamPackageSchedule: createTimeframesForExamPackageSchedule,
     getAllExamPackage: getAllExamPackage,
     getPackageScheduleByDate: getPackageScheduleByDate,
-    patientInforWhenBookingExamPackage: patientInforWhenBookingExamPackage,
+    handlePatientBookingExamPackage: handlePatientBookingExamPackage,
 };

@@ -345,27 +345,26 @@ let handlePatientBookingAppointmentService = async (data) => {
     }
 };
 
-let isBookingConfirmationExpired = (booking) => {
-    if (!booking || !booking.createdAt || !booking.date || !booking.timeType) {
+const isBookingConfirmationExpired = (booking) => {
+    if (!booking?.createdAt || !booking?.date || !booking?.timeType) {
         return true; // fail-safe
     }
 
     const now = moment();
 
-    // Thời điểm khám
     const timeStr = TIMEFRAME_MAP[booking.timeType];
     if (!timeStr) return true;
 
+    // Thời điểm khám
     const appointmentTime = moment(`${moment(booking.date).format("YYYY-MM-DD")} ${timeStr}`, "YYYY-MM-DD HH:mm");
 
-    // Trường hợp khám trong hôm nay
-    if (appointmentTime.isSame(now, "day")) {
-        return now.isAfter(appointmentTime.subtract(0, "hour"));
-    }
-
-    // Trường hợp còn lại: quá 24h từ lúc tạo booking
+    // Hạn tối đa 24h kể từ lúc tạo
     const expiredByCreateTime = moment(booking.createdAt).add(24, "hours");
-    return now.isAfter(expiredByCreateTime);
+
+    // Thời điểm hết hạn thực tế = mốc đến trước
+    const expiredAt = moment.min(appointmentTime, expiredByCreateTime);
+
+    return now.isSameOrAfter(expiredAt);
 };
 
 let confirmBookingAppointmentService = (data) => {
@@ -480,36 +479,61 @@ let confirmBookingAppointmentService = (data) => {
 let confirmBookingExamPackageService = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
+            // ===== 1. Validate =====
             if (!data.token || !data.packageId) {
                 resolve({
                     errCode: 1,
-                    errMessage: `Missing parameter(s): token or packageId!`,
+                    message: "Thiếu thông tin xác nhận gói khám.",
                 });
-            } else {
-                let bookedPackage = await db.ExamPackage_booking.findOne({
-                    where: {
-                        examPackageId: data.packageId,
-                        token: data.token,
-                        statusId: "S1",
-                    },
-                });
-
-                if (bookedPackage) {
-                    bookedPackage.statusId = "S2";
-                    await bookedPackage.save();
-                    resolve({
-                        errCode: 0,
-                        errMessage: "The patient has confirmed!",
-                    });
-                } else {
-                    resolve({
-                        errCode: 2,
-                        errMessage: "Appointment has been actived or does not exist!",
-                    });
-                }
+                return;
             }
+
+            // ===== 2. Lấy booking =====
+            let booking = await db.ExamPackage_booking.findOne({
+                where: {
+                    examPackageId: data.packageId,
+                    token: data.token,
+                    statusId: "S1",
+                },
+                raw: false,
+            });
+
+            // ===== 3. Không tồn tại =====
+            if (!booking) {
+                resolve({
+                    errCode: 2,
+                    message: "Gói khám đã được xác nhận hoặc không tồn tại.",
+                });
+                return;
+            }
+
+            // ===== 4. CHECK LINK EXPIRED (DÙNG CHUNG) =====
+            if (isBookingConfirmationExpired(booking)) {
+                // booking.statusId = "S4"; // expired (nếu bạn có enum)
+                await booking.save();
+
+                resolve({
+                    errCode: 4,
+                    message: "Liên kết xác nhận gói khám đã hết hạn.",
+                });
+                return;
+            }
+
+            // ===== 5. Xác nhận booking =====
+            booking.statusId = "S2";
+            await booking.save();
+
+            // ===== 6. Done =====
+            resolve({
+                errCode: 0,
+                message: "Xác nhận gói khám thành công.",
+            });
         } catch (e) {
-            reject(e);
+            console.error("confirmBookingExamPackageService error:", e);
+            reject({
+                errCode: -1,
+                message: "Lỗi hệ thống khi xác nhận gói khám.",
+            });
         }
     });
 };
