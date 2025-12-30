@@ -8,6 +8,17 @@ import { where } from "sequelize";
 import sendConfirmBookingEmailService from "./sendConfirmBookingEmailService";
 import { v4 as uuidv4 } from "uuid";
 
+const TIMEFRAME_MAP = {
+    T1: "08:00",
+    T2: "09:00",
+    T3: "10:00",
+    T4: "11:00",
+    T5: "13:00",
+    T6: "14:00",
+    T7: "15:00",
+    T8: "16:00",
+};
+
 let buildUrlConfirmMedicalRecord = (doctorId, token) => {
     let result = `${process.env.URL_REACT_SERVER}/confirm-booking?token=${token}&doctorId=${doctorId}`;
     return result;
@@ -334,81 +345,133 @@ let handlePatientBookingAppointmentService = async (data) => {
     }
 };
 
+let isBookingConfirmationExpired = (booking) => {
+    if (!booking || !booking.createdAt || !booking.date || !booking.timeType) {
+        return true; // fail-safe
+    }
+
+    const now = moment();
+
+    // Thời điểm khám
+    const timeStr = TIMEFRAME_MAP[booking.timeType];
+    if (!timeStr) return true;
+
+    const appointmentTime = moment(`${moment(booking.date).format("YYYY-MM-DD")} ${timeStr}`, "YYYY-MM-DD HH:mm");
+
+    // Trường hợp khám trong hôm nay
+    if (appointmentTime.isSame(now, "day")) {
+        return now.isAfter(appointmentTime.subtract(0, "hour"));
+    }
+
+    // Trường hợp còn lại: quá 24h từ lúc tạo booking
+    const expiredByCreateTime = moment(booking.createdAt).add(24, "hours");
+    return now.isAfter(expiredByCreateTime);
+};
+
 let confirmBookingAppointmentService = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
+            // ===== 1. Validate input =====
             if (!data.token || !data.doctorId) {
                 resolve({
                     errCode: 1,
-                    errMessage: `Missing parameter(s): token or doctorId!`,
+                    errMessage: "Missing parameter(s): token or doctorId!",
                 });
-            } else {
-                let appointment = await db.Booking.findOne({
-                    where: {
-                        doctorId: data.doctorId,
-                        token: data.token,
-                        statusId: "S1",
-                    },
-                    include: [
-                        {
-                            model: db.User,
-                            as: "doctorHasAppointmentWithPatients",
-                            attributes: ["id", "firstName", "lastName", "address", "phoneNumber"],
-                            include: [
-                                {
-                                    model: db.Doctor_infor,
-                                    attributes: {
-                                        exclude: ["id", "doctorId", "provinceId", "specialtyId", "clinicId", "note", "count"],
-                                    },
-                                    include: [
-                                        {
-                                            model: db.Allcode,
-                                            as: "priceTypeData",
-                                            attributes: ["value_Eng", "value_Vie"],
-                                        },
-                                    ],
-                                },
-                            ],
-                        },
-                    ],
-                    raw: false,
-                });
-
-                if (appointment) {
-                    switch (appointment.paymentMethod) {
-                        case "PM1":
-                            appointment.statusId = "S2";
-                            appointment.paidAmount = data.paidAmount / 100;
-                            let amountToBePaid = +appointment?.doctorHasAppointmentWithPatients?.Doctor_infor?.priceTypeData?.value_Vie;
-                            let differential = amountToBePaid - data.paidAmount / 100;
-                            if (differential === 0) {
-                                appointment.paymentStatus = "PT3";
-                            } else if (differential > 0) {
-                                appointment.paymentStatus = "PT2";
-                            }
-                            await appointment.save();
-                            break;
-                        case "PM2":
-                            appointment.statusId = "S2";
-                            await appointment.save();
-                            break;
-                        case "PM3":
-                            appointment.statusId = "S2";
-                            await appointment.save();
-                            break;
-                    }
-                    resolve({
-                        errCode: 0,
-                        errMessage: "The patient has confirmed!",
-                    });
-                } else {
-                    resolve({
-                        errCode: 2,
-                        errMessage: "Appointment has been actived or does not exist!",
-                    });
-                }
+                return;
             }
+
+            // ===== 2. Lấy booking =====
+            let appointment = await db.Booking.findOne({
+                where: {
+                    doctorId: data.doctorId,
+                    token: data.token,
+                    statusId: "S1",
+                },
+                include: [
+                    {
+                        model: db.User,
+                        as: "doctorHasAppointmentWithPatients",
+                        attributes: ["id", "firstName", "lastName", "address", "phoneNumber"],
+                        include: [
+                            {
+                                model: db.Doctor_infor,
+                                attributes: {
+                                    exclude: ["id", "doctorId", "provinceId", "specialtyId", "clinicId", "note", "count"],
+                                },
+                                include: [
+                                    {
+                                        model: db.Allcode,
+                                        as: "priceTypeData",
+                                        attributes: ["value_Eng", "value_Vie"],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+                raw: false,
+            });
+
+            // ===== 3. Booking không tồn tại =====
+            if (!appointment) {
+                resolve({
+                    errCode: 2,
+                    errMessage: "Appointment has been activated or does not exist!",
+                });
+                return;
+            }
+
+            // ===== 4. CHECK LINK EXPIRED =====
+            if (isBookingConfirmationExpired(appointment)) {
+                resolve({
+                    errCode: 4,
+                    errMessage: "Confirmation link expired!",
+                });
+                return;
+            }
+
+            // ===== 5. Xác nhận booking =====
+            switch (appointment.paymentMethod) {
+                case "PM1": {
+                    const paidAmount = data.paidAmount ? data.paidAmount / 100 : 0;
+                    appointment.statusId = "S2";
+                    appointment.paidAmount = paidAmount;
+
+                    let amountToBePaid = +appointment?.doctorHasAppointmentWithPatients?.Doctor_infor?.priceTypeData?.value_Vie || 0;
+
+                    let differential = amountToBePaid - paidAmount;
+
+                    if (differential === 0) {
+                        appointment.paymentStatus = "PT3"; // paid full
+                    } else if (differential > 0) {
+                        appointment.paymentStatus = "PT2"; // paid partial
+                    }
+
+                    await appointment.save();
+                    break;
+                }
+
+                case "PM2":
+                case "PM3":
+                    appointment.statusId = "S2";
+                    await appointment.save();
+                    break;
+
+                default:
+                    resolve({
+                        errCode: 3,
+                        errMessage: "Unsupported payment method!",
+                    });
+                    return;
+            }
+
+            // ===== 6. Done =====
+            resolve({
+                errCode: 0,
+                errMessage: "The patient has confirmed!",
+            });
         } catch (e) {
+            console.error("confirmBookingAppointmentService error:", e);
             reject(e);
         }
     });

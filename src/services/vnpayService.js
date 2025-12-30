@@ -1,6 +1,18 @@
 require("dotenv").config();
 import db from "../models/index";
 import { VNPay, ignoreLogger, ProductCode, VnpLocale, dateFormat } from "vnpay";
+const moment = require("moment");
+
+const TIMEFRAME_MAP = {
+    T1: "08:00",
+    T2: "09:00",
+    T3: "10:00",
+    T4: "11:00",
+    T5: "13:00",
+    T6: "14:00",
+    T7: "15:00",
+    T8: "16:00",
+};
 
 const vnpay = new VNPay({
     tmnCode: process.env.VNP_TMNCODE,
@@ -11,36 +23,60 @@ const vnpay = new VNPay({
     // enableLog: true,  // nếu muốn log chi tiết
 });
 
+const isBookingExpired = (booking) => {
+    if (!booking || !booking.createdAt || !booking.date || !booking.timeType) {
+        return true; // fail-safe
+    }
+
+    const now = moment();
+
+    // Thời điểm bắt đầu khám
+    const timeStr = TIMEFRAME_MAP[booking.timeType];
+    if (!timeStr) return true;
+
+    const appointmentTime = moment(`${moment(booking.date).format("YYYY-MM-DD")} ${timeStr}`, "YYYY-MM-DD HH:mm");
+
+    // Nếu khám trong cùng ngày
+    if (appointmentTime.isSame(now, "day")) {
+        return now.isAfter(appointmentTime.subtract(0, "hour"));
+    }
+
+    // Nếu khác ngày → quá 24h kể từ lúc tạo
+    const expireByCreatedAt = moment(booking.createdAt).add(24, "hours");
+    return now.isAfter(expireByCreatedAt);
+};
+
 let createVnpayPaymentUrlService = (req) => {
     return new Promise(async (resolve, reject) => {
         try {
-            // Lấy thông tin cuộc hẹn để cho vào vnp_OrderInfo và amount (chưa xong)
             let { token, doctorId } = req.body;
 
+            if (!token || !doctorId) {
+                resolve({
+                    errCode: 1,
+                    errMessage: "Missing token or doctorId",
+                });
+                return;
+            }
+
+            // ===== 1. Lấy booking =====
             let appointmentInfo = await db.Booking.findOne({
                 where: {
                     doctorId: doctorId,
                     token: token,
-                },
-                attributes: {
-                    exclude: ["patientBirthday", "patientAddress", "createdAt", "updatedAt", "patientGender"],
+                    statusId: "S1", // CHỈ cho phép khi chưa confirm
                 },
                 include: [
                     {
                         model: db.User,
                         as: "doctorHasAppointmentWithPatients",
-                        attributes: ["id", "firstName", "lastName", "address", "phoneNumber"],
                         include: [
                             {
                                 model: db.Doctor_infor,
-                                attributes: {
-                                    exclude: ["id", "doctorId", "provinceId", "specialtyId", "clinicId", "note", "count"],
-                                },
                                 include: [
                                     {
                                         model: db.Allcode,
                                         as: "priceTypeData",
-                                        attributes: ["value_Eng", "value_Vie"],
                                     },
                                 ],
                             },
@@ -49,71 +85,64 @@ let createVnpayPaymentUrlService = (req) => {
                     {
                         model: db.Allcode,
                         as: "appointmentTimeTypeData",
-                        attributes: ["value_Vie", "value_Eng"],
                     },
                 ],
                 raw: false,
             });
 
+            if (!appointmentInfo) {
+                resolve({
+                    errCode: 2,
+                    errMessage: "Booking not found or already confirmed",
+                });
+                return;
+            }
+
+            // ===== 2. CHECK HẾT HẠN NGAY TẠI ĐÂY =====
+            if (isBookingExpired(appointmentInfo)) {
+                resolve({
+                    errCode: 4,
+                    errMessage: "Booking confirmation/payment link expired",
+                });
+                return;
+            }
+
+            // ===== 3. Lấy số tiền =====
             let amountToBePaid = appointmentInfo?.doctorHasAppointmentWithPatients?.Doctor_infor?.priceTypeData?.value_Vie;
 
-            // Lấy IP
+            if (!amountToBePaid) {
+                resolve({
+                    errCode: 5,
+                    errMessage: "Invalid payment amount",
+                });
+                return;
+            }
+
+            // ===== 4. Lấy IP =====
             let ipAddr = req.headers["x-forwarded-for"] || req.connection.remoteAddress || req.socket.remoteAddress || req.ip;
+
             if (ipAddr === "::1" || ipAddr === "127.0.0.1") {
                 ipAddr = "127.0.0.1";
             }
 
-            // "appointmentInfo": {
-            //     "id": 8,
-            //     "statusId": "S1",
-            //     "doctorId": 21,
-            //     "patientId": 3,
-            //     "date": "2024-10-24T17:00:00.000Z",
-            //     "patientPhoneNumber": "01111111113",
-            //     "token": "27969668-93e2-4e6d-afba-0a9879caad8c",
-            //     "examReason": "Tôi bị đau đầu",
-            //     "timeType": "T2",
-            //     "paymentMethod": "PM3",
-            //     "paymentStatus": "PT1",
-            //     "paidAmount": 0,
-            //     "doctorHasAppointmentWithPatients.id": 21,
-            //     "doctorHasAppointmentWithPatients.firstName": "Phương",
-            //     "doctorHasAppointmentWithPatients.lastName": "Phạm Hiểu",
-            //     "doctorHasAppointmentWithPatients.address": "16 Phạm Ngũ Lão, phường Đông Sơn, Thanh Hóa, Vietnam",
-            //     "doctorHasAppointmentWithPatients.phoneNumber": "03737372626",
-            //     "doctorHasAppointmentWithPatients.Doctor_infor.id": 11,
-            //     "doctorHasAppointmentWithPatients.Doctor_infor.priceId": "PRI5",
-            //     "doctorHasAppointmentWithPatients.Doctor_infor.paymentId": "PAY3",
-            //     "doctorHasAppointmentWithPatients.Doctor_infor.clinicAddress": "16 Phạm Ngũ Lão, phường Đông Sơn, Thanh Hóa, Vietnam",
-            //     "doctorHasAppointmentWithPatients.Doctor_infor.clinicName": "Phòng khám Đa khoa Phụ Sản Đông Sơn",
-            //     "doctorHasAppointmentWithPatients.Doctor_infor.createdAt": "2024-10-06T09:48:08.000Z",
-            //     "doctorHasAppointmentWithPatients.Doctor_infor.updatedAt": "2024-10-06T09:48:08.000Z",
-            //     "doctorHasAppointmentWithPatients.Doctor_infor.priceTypeData.id": 51,
-            //     "doctorHasAppointmentWithPatients.Doctor_infor.priceTypeData.value_Eng": "30",
-            //     "doctorHasAppointmentWithPatients.Doctor_infor.priceTypeData.value_Vie": "400000",
-            //     "appointmentTimeTypeData.value_Vie": "9:00 - 10:00",
-            //     "appointmentTimeTypeData.value_Eng": "9:00 AM - 10:00 AM"
-            // }
+            // ===== 5. Tạo payment URL =====
+            const returnUrl = appointmentInfo.paymentMethod === "PM2" ? `${process.env.VNP_RETURNURL_POST_VISIT_PAYMENT}?token=${token}&doctorId=${doctorId}` : `${process.env.VNP_RETURNURL}?token=${token}&doctorId=${doctorId}`;
 
-            // Tạo url thanh toán
-
-            const returnUrl = appointmentInfo.paymentMethod === "PM2" ? `${process.env.VNP_RETURNURL_POST_VISIT_PAYMENT}?token=${req.body.token}&doctorId=${req.body.doctorId}` : `${process.env.VNP_RETURNURL}?token=${req.body.token}&doctorId=${req.body.doctorId}`;
             const paymentUrl = await vnpay.buildPaymentUrl({
                 vnp_Amount: amountToBePaid,
                 vnp_IpAddr: ipAddr,
                 vnp_ReturnUrl: returnUrl,
                 vnp_TxnRef: `TXN${Date.now()}`,
-                vnp_OrderInfo: "Thanh toán dịch vụ khám bệnh", //hardcode
+                vnp_OrderInfo: "Thanh toán dịch vụ khám bệnh",
             });
-
-            console.log("check payment url: ", paymentUrl);
 
             resolve({
                 errCode: 0,
-                message: "Create payment url sucessfully!",
+                message: "Create payment url successfully!",
                 url: paymentUrl,
             });
         } catch (e) {
+            console.error("createVnpayPaymentUrlService error:", e);
             reject(e);
         }
     });
