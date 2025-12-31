@@ -64,7 +64,6 @@ let createVnpayPaymentUrlService = (req) => {
                 where: {
                     doctorId: doctorId,
                     token: token,
-                    statusId: "S1", // CHỈ cho phép khi chưa confirm
                 },
                 include: [
                     {

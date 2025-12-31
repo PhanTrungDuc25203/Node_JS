@@ -448,6 +448,11 @@ let handlePatientBookingExamPackageService = async (data) => {
                         exclude: ["image"],
                     },
                 },
+                {
+                    model: db.Allcode,
+                    as: "priceDataForPackage",
+                    attributes: ["value_Eng", "value_Vie"],
+                },
             ],
             raw: false,
         });
@@ -473,6 +478,7 @@ let handlePatientBookingExamPackageService = async (data) => {
             doctorName: packageInfor.name,
             clinicName: packageInfor.medicalFacilityPackage?.name || "",
             clinicAddress: packageInfor.medicalFacilityPackage?.address || "",
+            price: packageInfor.priceDataForPackage.value_Vie + " đồng",
             language: data.language,
             redirectLink: redirectLink,
             isPayment: data.selectedPaymentMethod === "PM1",

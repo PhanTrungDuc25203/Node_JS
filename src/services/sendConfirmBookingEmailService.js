@@ -25,7 +25,8 @@ let sendAEmail = async (sentData) => {
                     <p>Bạn vừa đặt lịch khám bệnh tại <b>MedicalCare</b> với thông tin như sau:</p>
                     <ul>
                         <li><b>Thời gian:</b> ${sentData.time}</li>
-                        <li><b>Bác sĩ:</b> ${sentData.doctorName}</li>
+                        <li><b>Dịch vụ khám:</b> ${sentData.doctorName}</li>
+                        <li><b>Giá khám:</b> ${sentData.price}</li>
                         <li><b>Phòng khám:</b> ${sentData.clinicName}</li>
                         <li><b>Địa chỉ:</b> ${sentData.clinicAddress}</li>
                     </ul>
@@ -50,7 +51,8 @@ let sendAEmail = async (sentData) => {
                     <p>Bạn vừa đặt lịch khám bệnh tại <b>MedicalCare</b> với thông tin như sau:</p>
                     <ul>
                         <li><b>Thời gian:</b> ${sentData.time}</li>
-                        <li><b>Bác sĩ:</b> ${sentData.doctorName}</li>
+                        <li><b>Dịch vụ khám:</b> ${sentData.doctorName}</li>
+                        <li><b>Giá khám:</b> ${sentData.price}</li>
                         <li><b>Phòng khám:</b> ${sentData.clinicName}</li>
                         <li><b>Địa chỉ:</b> ${sentData.clinicAddress}</li>
                     </ul>
@@ -78,7 +80,8 @@ let sendAEmail = async (sentData) => {
                     <p>You have booked a medical appointment at <b>MedicalCare</b> with the following details:</p>
                     <ul>
                         <li><b>Time:</b> ${sentData.time}</li>
-                        <li><b>Doctor:</b> ${sentData.doctorName}</li>
+                        <li><b>Examination service:</b> ${sentData.doctorName}</li>
+                        <li><b>Examination price:</b> ${sentData.price}</li>
                         <li><b>Clinic:</b> ${sentData.clinicName}</li>
                         <li><b>Address:</b> ${sentData.clinicAddress}</li>
                     </ul>
@@ -103,7 +106,8 @@ let sendAEmail = async (sentData) => {
                     <p>You have just scheduled a medical appointment at <b>MedicalCare</b> with the following details:</p>
                     <ul>
                         <li><b>Time:</b> ${sentData.time}</li>
-                        <li><b>Doctor:</b> ${sentData.doctorName}</li>
+                        <li><b>Examination service:</b> ${sentData.doctorName}</li>
+                        <li><b>Examination price:</b> ${sentData.price}</li>
                         <li><b>Clinic:</b> ${sentData.clinicName}</li>
                         <li><b>Address:</b> ${sentData.clinicAddress}</li>
                     </ul>
@@ -129,7 +133,7 @@ let sendAEmail = async (sentData) => {
     // async..await is not allowed in global scope, must use a wrapper
     // send mail with defined transport object
     let info = await transporter.sendMail({
-        from: '"Phan Piscean 👻" <phantrungduc2522005@gmail.com>', // sender address
+        from: '"MedicalCare" <phantrungduc2522005@gmail.com>', // sender address
         to: sentData.receiverEmail, // list of receivers
         subject: "Thông tin đặt lịch khám bệnh ✔", // Subject line
         text: "Gửi từ MedicalCare", // plain text body

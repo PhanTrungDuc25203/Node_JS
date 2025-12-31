@@ -82,7 +82,7 @@ let sendAEmail = async (sentData) => {
     let safePatientName = removeVietnameseTones(sentData.patientName);
 
     let info = await transporter.sendMail({
-        from: '"Phan Piscean 👻" <phantrungduc2522005@gmail.com>',
+        from: '"MedicalCare " <phantrungduc2522005@gmail.com>',
         to: sentData.receiverEmail,
         subject: "Thanh toán dịch vụ khám bệnh ✔",
         html: getHtmlEmailDependLanguage(sentData),

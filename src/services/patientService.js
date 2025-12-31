@@ -302,15 +302,42 @@ let handlePatientBookingAppointmentService = async (data) => {
         await transaction.commit();
 
         // ===== 7. SAU COMMIT mới gửi email =====
+        let timeframeData = await db.Allcode.findOne({
+            where: { keyMap: data.timeType, type: "TIME" },
+        });
         let doctorInfor = await db.User.findOne({
             where: { id: data.doctorId },
             attributes: {
                 exclude: ["id", "email", "password", "address", "phoneNumber", "roleId", "positionId"],
             },
             include: [
+                { model: db.ArticleMarkdown, attributes: ["htmlContent", "markdownContent", "description"] },
+                { model: db.Allcode, as: "positionData", attributes: ["value_Eng", "value_Vie"] },
+
                 {
                     model: db.Doctor_infor,
-                    attributes: ["clinicName", "clinicAddress"],
+                    attributes: {
+                        exclude: ["id", "doctorId"],
+                    },
+                    include: [
+                        { model: db.Allcode, as: "priceTypeData", attributes: ["value_Eng", "value_Vie"] },
+                        { model: db.Allcode, as: "provinceTypeData", attributes: ["value_Eng", "value_Vie"] },
+                        { model: db.Allcode, as: "paymentTypeData", attributes: ["value_Eng", "value_Vie"] },
+                        { model: db.Specialty, as: "belongToSpecialty", attributes: ["name"] },
+                    ],
+                },
+                {
+                    model: db.Doctor_specialty_medicalFacility,
+                    attributes: {
+                        exclude: ["id", "createdAt", "updatedAt"],
+                    },
+                    include: [
+                        {
+                            model: db.ComplexMedicalFacility,
+                            as: "medicalFacilityDoctorAndSpecialty",
+                            attributes: ["id", "name", "address"],
+                        },
+                    ],
                 },
             ],
         });
@@ -320,12 +347,13 @@ let handlePatientBookingAppointmentService = async (data) => {
         await sendConfirmBookingEmailService.sendAEmail({
             receiverEmail: data.email,
             patientName: data.fullname,
-            time: data.appointmentMoment,
-            doctorName: doctorInfor.lastName + " " + doctorInfor.firstName,
-            clinicName: doctorInfor.Doctor_infor.clinicName,
-            clinicAddress: doctorInfor.Doctor_infor.clinicAddress,
+            time: data.appointmentMoment + " - " + timeframeData.value_Vie,
+            doctorName: "Khám với bác sĩ " + doctorInfor.lastName + " " + doctorInfor.firstName,
+            clinicName: doctorInfor.Doctor_infor.belongToSpecialty.name + " - " + doctorInfor.Doctor_specialty_medicalFacility.medicalFacilityDoctorAndSpecialty.name,
+            clinicAddress: doctorInfor.Doctor_specialty_medicalFacility.medicalFacilityDoctorAndSpecialty.address,
             language: data.language,
             redirectLink,
+            price: doctorInfor.Doctor_infor.priceTypeData.value_Vie + " đồng",
             isPayment: data.selectedPaymentMethod === "PM1",
         });
 
