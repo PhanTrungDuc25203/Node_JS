@@ -2,6 +2,7 @@ import { OAuth2Client } from "google-auth-library";
 import db from "../models";
 import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
+import { saveRefreshToken } from "../services/jwtService";
 require("dotenv").config();
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -56,10 +57,7 @@ const handleGoogleLogin = async (req, res) => {
         );
 
         // ✅ Lưu refreshToken vào DB (nếu có bảng Token)
-        await db.AuthToken.create({
-            userId: user.id,
-            refreshToken,
-        });
+        await saveRefreshToken(user.id, refreshToken);
 
         // ✅ Gửi refreshToken qua cookie (bảo mật)
         res.cookie("refreshToken", refreshToken, {
