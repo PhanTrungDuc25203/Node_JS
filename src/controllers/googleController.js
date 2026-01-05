@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import { saveRefreshToken } from "../services/jwtService";
 require("dotenv").config();
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const client = new OAuth2Client(process.env.OAUTH_CLIENT_ID);
 
 const handleGoogleLogin = async (req, res) => {
     const { token } = req.body;
@@ -18,7 +18,7 @@ const handleGoogleLogin = async (req, res) => {
         // ✅ Xác thực token Google
         const ticket = await client.verifyIdToken({
             idToken: token,
-            audience: process.env.GOOGLE_CLIENT_ID,
+            audience: process.env.OAUTH_CLIENT_ID,
         });
 
         const payload = ticket.getPayload();

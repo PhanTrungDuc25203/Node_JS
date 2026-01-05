@@ -10,6 +10,7 @@ import searchController from "../controllers/searchController";
 import staffController from "../controllers/staffController";
 import paymentController from "../controllers/paymentController";
 import googleController from "../controllers/googleController";
+import facebookController from "../controllers/facebookController";
 import jwtController from "../controllers/jwtController";
 
 let router = express.Router();
@@ -28,6 +29,7 @@ let initWebRoutes = (app) => {
     //những gì ở phía React thì phân biệt bằng các thêm tiền tố /api/ vào trước các route
     router.post("/api/login", userController.handleLogin);
     router.post("/api/auth/google/verify", googleController.handleGoogleLogin);
+    router.post("/api/auth/facebook/verify", facebookController.handleFacebookLogin);
     router.post("/api/refresh-token", jwtController.handleRefreshToken);
     //viết link api lất tất cả người dùng ra cho react
     router.get("/api/get-all-users-for-react", userController.handleGetAllUsersForReact);
