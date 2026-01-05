@@ -34,7 +34,7 @@ let handleLogin = async (req, res) => {
 
         // ✅ Trả về đúng format FE đang dùng
         return res.status(200).json({
-            errCode: 0,
+            errCode: result.errCode,
             message: result.message,
             user: result.user,
             accessToken: result.accessToken,
