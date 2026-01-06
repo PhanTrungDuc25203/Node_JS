@@ -25,7 +25,7 @@ let sendAEmail = async (sentData) => {
                         <li><b>Bác sĩ:</b> ${sentData.doctorName}</li>
                         <li><b>Nơi khám:</b> ${sentData.clinicAddress}</li>
                     </ul>
-                    <p><i>Xin mời quý khách tiền hành than toán bằng đường link phía dưới:</i></p>
+                    <p><i>Xin mời quý khách tiền hành thanh toán bằng đường link phía dưới:</i></p>
                     <div style="margin-top: 20px;">
                         <a href="${sentData.redirectLink}" target="_blank"
                            style="display: inline-block; background-color: #007bff; color: #fff;
