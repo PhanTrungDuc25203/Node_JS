@@ -470,6 +470,7 @@ let saveAppointmentHistoryService = (inputData) => {
                     booking.files = fileBuffer;
                 }
                 let sendEmailRes = await sendMedicalReportService.sendMedicalReportToPatient({
+                    examType: "doctorAppointment",
                     receiverEmail: inputData.patientEmail,
                     patientName: `${booking.patientHasAppointmentWithDoctors.lastName} ${booking.patientHasAppointmentWithDoctors.firstName}`,
                     doctorName: `${booking.doctorHasAppointmentWithPatients.lastName} ${booking.doctorHasAppointmentWithPatients.firstName}`,
@@ -550,6 +551,7 @@ let confirmAppointmentDoneService = (data) => {
                     }
                     if (appointment.paymentMethod === "PM3") {
                         let sendEmailRes = await sendMedicalReportService.sendMedicalReportToPatient({
+                            examType: "doctorAppointment",
                             receiverEmail: appointment.patientHasAppointmentWithDoctors.email,
                             patientName: `${appointment.patientHasAppointmentWithDoctors.lastName} ${appointment.patientHasAppointmentWithDoctors.firstName}`,
                             doctorName: `${appointment.doctorHasAppointmentWithPatients.lastName} ${appointment.doctorHasAppointmentWithPatients.firstName}`,

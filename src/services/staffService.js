@@ -1,5 +1,6 @@
 import db from "../models/index";
 require("dotenv").config();
+import sendMedicalReportService from "./sendMedicalReportService";
 
 let createResultTemplateService = (data) => {
     return new Promise(async (resolve, reject) => {
@@ -132,16 +133,64 @@ let saveExamPackageResultService = (resultData) => {
                 status: resultData.status,
             });
 
-            // let needUpdatedBooking = await db.ExamPackage_booking.findOne({
-            //     where: {
-            //         id: resultData.bookingId,
-            //     },
-            // });
+            let examPackageBookingData = await db.ExamPackage_booking.findOne({
+                where: {
+                    id: resultData.bookingId,
+                },
+                include: [
+                    {
+                        model: db.User,
+                        as: "patientBookingExamPackageData",
+                        attributes: ["email", "firstName", "lastName"],
+                    },
+                    {
+                        model: db.ExamPackage_specialty_medicalFacility,
+                        as: "examPackage",
+                        attributes: {
+                            exclude: ["htmlDescription", "markdownDescription", "htmlCategory", "markdownCategory"],
+                        },
+                        include: [
+                            {
+                                model: db.ComplexMedicalFacility,
+                                as: "medicalFacilityPackage",
+                                attributes: {
+                                    exclude: ["htmlDescription", "markdownDescription", "htmlEquipment", "markdownEquipment", "image"],
+                                },
+                            },
+                            {
+                                model: db.Specialty,
+                                as: "examPackageHaveSpecialty",
+                                attributes: {
+                                    exclude: ["specialtyImage"],
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        model: db.ExamPackage_result,
+                        as: "examPackageResult",
+                    },
+                    {
+                        model: db.Allcode,
+                        as: "examPackageTimeTypeData",
+                    },
+                ],
+            });
 
-            // if (needUpdatedBooking) {
-            //     needUpdatedBooking.statusId = "S3";
-            //     needUpdatedBooking.save();
-            // }
+            // gửi kết quả qua email người dùng ở đây
+            await sendMedicalReportService.sendMedicalReportToPatient({
+                examType: "examPackage",
+                receiverEmail: examPackageBookingData.patientBookingExamPackageData.email,
+                patientName: `${examPackageBookingData.patientBookingExamPackageData.lastName}
+                  ${examPackageBookingData.patientBookingExamPackageData.firstName}`,
+                packageName: examPackageBookingData.examPackage.name,
+                medicalFacilityName: examPackageBookingData.examPackage.medicalFacilityPackage.name,
+                appointmentDate: examPackageBookingData.date,
+                examPackageResult: {
+                    template: examPackageBookingData.examPackageResult.template,
+                    result: examPackageBookingData.examPackageResult.result,
+                },
+            });
 
             resolve({
                 errCode: 0,
