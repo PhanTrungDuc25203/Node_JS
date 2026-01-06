@@ -2,6 +2,7 @@ require("dotenv").config();
 import db from "../models/index";
 import { VNPay, ignoreLogger, ProductCode, VnpLocale, dateFormat } from "vnpay";
 const moment = require("moment");
+const { Op } = db.Sequelize;
 
 const TIMEFRAME_MAP = {
     T1: "08:00",
@@ -64,6 +65,9 @@ let createVnpayPaymentUrlService = (req) => {
                 where: {
                     doctorId: doctorId,
                     token: token,
+                    paymentStatus: {
+                        [Op.ne]: "PT3",
+                    },
                 },
                 include: [
                     {

@@ -791,24 +791,22 @@ let getPatientAppointmentsMonthlyVisitsService = (patientId) => {
                 });
             }
 
-            let currentDate = new Date();
-            let currentMonth = currentDate.getMonth() + 1;
+            const now = new Date();
+            const year = now.getFullYear();
+            const currentMonth = now.getMonth() + 1;
 
-            let startMonth, endMonth;
+            const startMonth = currentMonth <= 6 ? 1 : 7;
+            const endMonth = currentMonth <= 6 ? 6 : 12;
 
-            if (currentMonth >= 1 && currentMonth <= 6) {
-                startMonth = 1;
-                endMonth = 6;
-            } else {
-                startMonth = 7;
-                endMonth = 12;
-            }
+            const startDate = new Date(year, startMonth - 1, 1, 0, 0, 0);
+            const endDate = new Date(year, endMonth, 0, 23, 59, 59);
 
             let bookings = await db.Booking.findAll({
                 where: {
-                    patientId: patientId,
+                    patientId,
                     date: {
-                        [db.Sequelize.Op.between]: [`${currentDate.getFullYear()}-${String(startMonth).padStart(2, "0")}-01 00:00:00`, `${currentDate.getFullYear()}-${String(endMonth).padStart(2, "0")}-31 23:59:59`],
+                        [db.Sequelize.Op.gte]: startDate,
+                        [db.Sequelize.Op.lte]: endDate,
                     },
                 },
                 attributes: ["id", "date"],
@@ -818,14 +816,14 @@ let getPatientAppointmentsMonthlyVisitsService = (patientId) => {
             let monthlyStats = [];
 
             for (let month = startMonth; month <= endMonth; month++) {
-                let visitCount = bookings.filter((b) => {
-                    let monthOfBooking = new Date(b.date).getMonth() + 1;
-                    return monthOfBooking === month;
+                const visits = bookings.filter((b) => {
+                    const bookingMonth = new Date(b.date).getMonth() + 1;
+                    return bookingMonth === month;
                 }).length;
 
                 monthlyStats.push({
                     month: `Tháng ${month}`,
-                    visits: visitCount,
+                    visits,
                 });
             }
 
