@@ -1,12 +1,12 @@
 import express from "express";
 import recommendationController from "../controllers/recommendationController";
 
-let initChatRoutes = (app) => {
+let initRecommendationRoutes = (app) => {
     let router = express.Router();
 
-    router.get("/recommend/doctors", recommendationController.recommendDoctorsForPatient);
+    router.get("/api/recommend/doctors", recommendationController.recommendDoctorsForPatientController);
 
     return app.use("/", router);
 };
 
-export default initChatRoutes;
+export default initRecommendationRoutes;

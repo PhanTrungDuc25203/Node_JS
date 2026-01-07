@@ -10,6 +10,7 @@ import helmet from "helmet"; // for security
 import compression from "compression"; // for response size optimization
 import morgan from "morgan"; // for logging
 import initChatRoutes from "./route/chatRoute";
+import initRecommendationRoutes from "./route/recommendationRoute";
 import cookieParser from "cookie-parser";
 import http from "http";
 import { Server } from "socket.io";
@@ -72,6 +73,7 @@ app.use(cookieParser());
 viewEngine(app);
 initWebRoutes(app);
 initChatRoutes(app);
+initRecommendationRoutes(app);
 
 connectDB();
 startCleanupCronJobs();
