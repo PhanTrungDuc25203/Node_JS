@@ -23,6 +23,7 @@ module.exports = (sequelize, DataTypes) => {
                 as: "examPackageResult",
             });
             ExamPackage_booking.belongsTo(models.Allcode, { foreignKey: "timeType", targetKey: "keyMap", as: "examPackageTimeTypeData" });
+            ExamPackage_booking.hasOne(models.DoctorPackageRate, { foreignKey: "paidPackageId", as: "paidPackageData" });
         }
     }
     ExamPackage_booking.init(

@@ -193,7 +193,7 @@ let saveRateAndReviewAboutPackage = async (req, res) => {
     try {
         console.log("check package review req: ", req.body);
 
-        let response = await userService.saveRateAndReviewAboutPackageService(req.body); 
+        let response = await userService.saveRateAndReviewAboutPackageService(req.body);
         return res.status(200).json(response);
     } catch (e) {
         console.log(e);
@@ -203,7 +203,6 @@ let saveRateAndReviewAboutPackage = async (req, res) => {
         });
     }
 };
-
 
 let getRateAndReviewAboutDoctor = async (req, res) => {
     try {
@@ -219,6 +218,24 @@ let getRateAndReviewAboutDoctor = async (req, res) => {
         return res.status(200).json({
             errCode: -1,
             errMessage: `Get rate and review about doctor error from server!`,
+        });
+    }
+};
+
+let getRateAndReviewAboutExamPackage = async (req, res) => {
+    try {
+        const { examPackageBookingId, examPackageId } = req.query;
+
+        let data = await userService.getRateAndReviewAboutExamPackageService({
+            examPackageBookingId,
+            examPackageId,
+        });
+
+        return res.status(200).json(data);
+    } catch (e) {
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: `Get rate and review about exam package error from server!`,
         });
     }
 };
@@ -261,4 +278,5 @@ module.exports = {
     saveRateAndReviewAboutDoctor: saveRateAndReviewAboutDoctor,
     saveRateAndReviewAboutPackage: saveRateAndReviewAboutPackage,
     getRateAndReviewAboutDoctor: getRateAndReviewAboutDoctor,
+    getRateAndReviewAboutExamPackage: getRateAndReviewAboutExamPackage,
 };

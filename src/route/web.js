@@ -111,6 +111,7 @@ let initWebRoutes = (app) => {
     router.post("/api/save-rate-and-review-about-package", userController.saveRateAndReviewAboutPackage);
     //lấy dữ liệu về đánh giá nhận xét của người dùng về thăm khám và bác sĩ
     router.get("/api/get-rate-and-review-about-doctor", userController.getRateAndReviewAboutDoctor);
+    router.get("/api/get-rate-and-review-about-exam-package", userController.getRateAndReviewAboutExamPackage);
     //route thanh toán
     router.post("/api/create_payment_url", paymentController.createVnpayPaymentUrl);
     //xử lý trường hợp người dùng thanh toán trực tuyến sau khi khám

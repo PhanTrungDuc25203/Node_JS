@@ -709,6 +709,70 @@ let getRateAndReviewAboutDoctorService = ({ appointmentId, doctorId }) => {
     });
 };
 
+let getRateAndReviewAboutExamPackageService = ({ examPackageBookingId, examPackageId }) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!examPackageBookingId && !examPackageId) {
+                return resolve({
+                    errCode: 1,
+                    errMessage: "Missing input parameter: examPackageBookingId or examPackageId!",
+                });
+            }
+
+            if (examPackageBookingId) {
+                let data = await db.DoctorPackageRate.findOne({
+                    where: {
+                        paidPackageId: examPackageBookingId,
+                    },
+                });
+
+                return resolve({
+                    errCode: 0,
+                    data,
+                });
+            }
+
+            if (examPackageId) {
+                let data = await db.DoctorPackageRate.findAll({
+                    where: { packageId: examPackageId },
+                    order: [["createdAt", "DESC"]],
+                    include: [
+                        {
+                            model: db.User,
+                            as: "patientData",
+                            attributes: ["id", "firstName", "lastName", "email", "image"], // các trường bạn muốn lấy
+                        },
+                        {
+                            model: db.Booking,
+                            as: "paidPackageData",
+                            attributes: ["date"],
+                        },
+                    ],
+                });
+
+                if (!data || data.length === 0) {
+                    return resolve({
+                        errCode: 0,
+                        data: [],
+                        averageRating: 0,
+                    });
+                }
+
+                let sum = data.reduce((total, item) => total + (item.rating || 0), 0);
+                let average = sum / data.length;
+
+                return resolve({
+                    errCode: 0,
+                    data,
+                    averageRating: Number(average.toFixed(1)), // làm tròn 1 số thập phân
+                });
+            }
+        } catch (e) {
+            reject(e);
+        }
+    });
+};
+
 let sendEmailOTP = (email) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -808,4 +872,5 @@ module.exports = {
     saveRateAndReviewAboutDoctorService: saveRateAndReviewAboutDoctorService,
     saveRateAndReviewAboutPackageService: saveRateAndReviewAboutPackageService,
     getRateAndReviewAboutDoctorService: getRateAndReviewAboutDoctorService,
+    getRateAndReviewAboutExamPackageService: getRateAndReviewAboutExamPackageService,
 };
