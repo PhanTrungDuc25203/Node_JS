@@ -189,6 +189,22 @@ let saveRateAndReviewAboutDoctor = async (req, res) => {
     }
 };
 
+let saveRateAndReviewAboutPackage = async (req, res) => {
+    try {
+        console.log("check package review req: ", req.body);
+
+        let response = await userService.saveRateAndReviewAboutPackageService(req.body); 
+        return res.status(200).json(response);
+    } catch (e) {
+        console.log(e);
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: "Save package rate and review error from server!",
+        });
+    }
+};
+
+
 let getRateAndReviewAboutDoctor = async (req, res) => {
     try {
         const { appointmentId, doctorId } = req.query;
@@ -243,5 +259,6 @@ module.exports = {
     getAllRelativeBookingsOfCurrentSystemUser: getAllRelativeBookingsOfCurrentSystemUser,
     // getAllRelativeBookingsOfCurrentSystemUser2: getAllRelativeBookingsOfCurrentSystemUser2,
     saveRateAndReviewAboutDoctor: saveRateAndReviewAboutDoctor,
+    saveRateAndReviewAboutPackage: saveRateAndReviewAboutPackage,
     getRateAndReviewAboutDoctor: getRateAndReviewAboutDoctor,
 };

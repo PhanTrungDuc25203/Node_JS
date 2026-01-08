@@ -108,6 +108,7 @@ let initWebRoutes = (app) => {
     router.get("/api/get-package-schedule-by-date", medicalFacilityController.getPackageScheduleByDate);
     //lưu đánh giá nhận xét của người dùng về thăm khám và bác sĩ
     router.post("/api/save-rate-and-review-about-doctor", userController.saveRateAndReviewAboutDoctor);
+    router.post("/api/save-rate-and-review-about-package", userController.saveRateAndReviewAboutPackage);
     //lấy dữ liệu về đánh giá nhận xét của người dùng về thăm khám và bác sĩ
     router.get("/api/get-rate-and-review-about-doctor", userController.getRateAndReviewAboutDoctor);
     //route thanh toán
