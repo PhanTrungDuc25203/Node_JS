@@ -6,6 +6,7 @@ import initWebRoutes from "./route/web";
 import connectDB from "./config/connectDB";
 import cors from "cors";
 import { startCleanupCronJobs } from "./cron/cleanupDatabaseCron";
+import { startCancelUnconfirmedBookingsCron } from "./cron/cancelUnconfirmedBookingsCron";
 import helmet from "helmet"; // for security
 import compression from "compression"; // for response size optimization
 import morgan from "morgan"; // for logging
@@ -77,6 +78,7 @@ initRecommendationRoutes(app);
 
 connectDB();
 startCleanupCronJobs();
+startCancelUnconfirmedBookingsCron();
 
 // lấy số cổng trong file .env
 let port = process.env.PORT || 6969;

@@ -40,6 +40,8 @@ async function cleanOldPackagesSchedules(daysAgo = 1) {
 
 export function startCleanupCronJobs() {
     console.log("🚀 Cron job dọn dẹp đã được khởi động!");
+    cleanOldDoctorSchedules(1);
+    cleanOldPackagesSchedules(1);
 
     // Chạy mỗi ngày lúc 00:00
     cron.schedule("0 0 * * *", async () => {
