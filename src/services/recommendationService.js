@@ -167,6 +167,160 @@ let recommendDoctorsForPatientService = async (patientId) => {
     }
 };
 
+let recommendPackagesForPatientService = async (patientId) => {
+    try {
+        // ===== 1. Validate input =====
+        if (!patientId) {
+            return {
+                errCode: 1,
+                errMessage: "Missing parameter(s): patientId!",
+            };
+        }
+
+        // ===== 2. Lấy lần khám gói gần nhất (đã DONE) =====
+        const lastPackageBooking = await db.ExamPackage_booking.findOne({
+            where: {
+                patientId,
+                statusId: "S3",
+            },
+            include: [
+                {
+                    model: db.ExamPackage_result,
+                    as: "examPackageResult",
+                    where: { status: "DONE" },
+                    required: true,
+                },
+                {
+                    model: db.ExamPackage_specialty_medicalFacility,
+                    as: "examPackage",
+                },
+            ],
+            order: [["date", "DESC"]],
+        });
+
+        const targetSpecialtyId = lastPackageBooking?.examPackage?.specialtyId || null;
+
+        // ===== 3. Lấy danh sách tất cả gói khám =====
+        const packages = await db.ExamPackage_specialty_medicalFacility.findAll({
+            include: [
+                {
+                    model: db.Allcode,
+                    as: "priceDataForPackage",
+                    attributes: ["value_Vie", "value_Eng"],
+                },
+                {
+                    model: db.Specialty,
+                    as: "examPackageHaveSpecialty",
+                    attributes: ["id", "name"],
+                },
+                {
+                    model: db.DoctorPackageRate,
+                    as: "packageRatings",
+                    attributes: [],
+                },
+                {
+                    model: db.ComplexMedicalFacility,
+                    as: "medicalFacilityPackage",
+                    attributes: ["id", "name", "address"],
+                },
+            ],
+            attributes: {
+                exclude: ["htmlDescription", "markdownDescription", "htmlCategory", "markdownCategory"],
+                include: [
+                    [fn("AVG", col("packageRatings.rating")), "avgRating"],
+                    [fn("COUNT", col("packageRatings.id")), "ratingCount"],
+                ],
+            },
+
+            group: ["ExamPackage_specialty_medicalFacility.id"],
+            raw: true,
+            nest: true,
+        });
+
+        // ===== 4. Lịch sử khám gói của bệnh nhân (DONE) =====
+        const packageHistory = await db.ExamPackage_booking.findAll({
+            where: {
+                patientId,
+                statusId: "S3",
+            },
+            include: [
+                {
+                    model: db.ExamPackage_result,
+                    as: "examPackageResult",
+                    where: { status: "DONE" },
+                    required: true,
+                },
+            ],
+            attributes: ["examPackageId", [fn("COUNT", col("examPackageId")), "visitCount"], [fn("MAX", col("date")), "lastVisitDate"]],
+            group: ["examPackageId"],
+            raw: true,
+        });
+
+        const historyMap = {};
+        packageHistory.forEach((item) => {
+            historyMap[item.examPackageId] = {
+                visitCount: Number(item.visitCount),
+                lastVisitDate: item.lastVisitDate,
+            };
+        });
+
+        // ===== 5. Tính điểm recommendation =====
+        const scoredPackages = packages.map((pkg) => {
+            /** 1. Specialty score */
+            const specialtyScore = targetSpecialtyId && pkg.specialtyId === targetSpecialtyId ? 1 : 0;
+
+            /** 2. History score */
+            const history = historyMap[pkg.id];
+            let historyScore = 0;
+
+            if (history?.lastVisitDate) {
+                const daysSinceLastVisit = (Date.now() - new Date(history.lastVisitDate)) / (1000 * 60 * 60 * 24);
+                historyScore = calculateTimeDecayScore(daysSinceLastVisit);
+            }
+
+            /** 3. Rating score */
+            const avgRating = pkg.avgRating ? Number(pkg.avgRating) : 0;
+            const ratingCount = pkg.ratingCount ? Number(pkg.ratingCount) : 0;
+            const ratingScore = calculateConfidenceRating(avgRating, ratingCount);
+
+            /** 4. Price score */
+            const price = Number(pkg.priceDataForPackage?.value_Vie) || null;
+            const priceScore = calculatePriceScore(price);
+
+            /** 5. Diversity bonus */
+            const diversityBonus = history ? 0 : 0.1;
+
+            /** 6. Final score */
+            const finalScore = specialtyScore * 0.35 + historyScore * 0.2 + ratingScore * 0.2 + priceScore * 0.15 + diversityBonus * 0.1;
+
+            return {
+                ...pkg,
+                avgRating,
+                ratingCount,
+                visitedCount: history?.visitCount || 0,
+                price,
+                finalScore,
+            };
+        });
+
+        // ===== 6. Sort & top 3 =====
+        const topPackages = scoredPackages.sort((a, b) => b.finalScore - a.finalScore).slice(0, 2);
+
+        return {
+            errCode: 0,
+            errMessage: "Get appropriate packages for patient successfully!",
+            data: topPackages,
+        };
+    } catch (e) {
+        console.error("Get appropriate packages for patient failed:", e);
+        return {
+            errCode: -1,
+            errMessage: "Server error!",
+        };
+    }
+};
+
 module.exports = {
     recommendDoctorsForPatientService: recommendDoctorsForPatientService,
+    recommendPackagesForPatientService: recommendPackagesForPatientService,
 };

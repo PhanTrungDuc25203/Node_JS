@@ -21,6 +21,7 @@ module.exports = (sequelize, DataTypes) => {
                 foreignKey: "examPackageId",
             });
             ExamPackage_specialty_medicalFacility.belongsTo(models.Specialty, { foreignKey: "specialtyId", targetKey: "id", as: "examPackageHaveSpecialty" });
+            ExamPackage_specialty_medicalFacility.hasMany(models.DoctorPackageRate, { foreignKey: "packageId", as: "packageRatings" });
         }
     }
     ExamPackage_specialty_medicalFacility.init(
