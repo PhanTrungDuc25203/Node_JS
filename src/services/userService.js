@@ -743,7 +743,7 @@ let getRateAndReviewAboutExamPackageService = ({ examPackageBookingId, examPacka
                             attributes: ["id", "firstName", "lastName", "email", "image"], // các trường bạn muốn lấy
                         },
                         {
-                            model: db.Booking,
+                            model: db.ExamPackage_booking,
                             as: "paidPackageData",
                             attributes: ["date"],
                         },
