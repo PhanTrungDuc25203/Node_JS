@@ -12,6 +12,7 @@ import paymentController from "../controllers/paymentController";
 import googleController from "../controllers/googleController";
 import facebookController from "../controllers/facebookController";
 import jwtController from "../controllers/jwtController";
+import { ratingLimiter } from "../middleware/ratingLimiter";
 
 let router = express.Router();
 
@@ -27,7 +28,7 @@ let initWebRoutes = (app) => {
     router.get("/delete-crud", homeController.deleteCRUD); //xóa dữ liệu User
 
     //những gì ở phía React thì phân biệt bằng các thêm tiền tố /api/ vào trước các route
-    router.post("/api/login", userController.handleLogin);
+    router.post("/api/login", ratingLimiter, userController.handleLogin);
     router.post("/api/auth/google/verify", googleController.handleGoogleLogin);
     router.post("/api/auth/facebook/verify", facebookController.handleFacebookLogin);
     router.post("/api/refresh-token", jwtController.handleRefreshToken);
