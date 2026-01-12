@@ -12,7 +12,7 @@ import paymentController from "../controllers/paymentController";
 import googleController from "../controllers/googleController";
 import facebookController from "../controllers/facebookController";
 import jwtController from "../controllers/jwtController";
-import { ratingLimiter } from "../middleware/ratingLimiter";
+import { loginApiRatingLimiter, otpApiRateLimiter } from "../middleware/ratingLimiter";
 
 let router = express.Router();
 
@@ -28,19 +28,19 @@ let initWebRoutes = (app) => {
     router.get("/delete-crud", homeController.deleteCRUD); //xóa dữ liệu User
 
     //những gì ở phía React thì phân biệt bằng các thêm tiền tố /api/ vào trước các route
-    router.post("/api/login", ratingLimiter, userController.handleLogin);
-    router.post("/api/auth/google/verify", googleController.handleGoogleLogin);
-    router.post("/api/auth/facebook/verify", facebookController.handleFacebookLogin);
-    router.post("/api/refresh-token", jwtController.handleRefreshToken);
+    router.post("/api/login", loginApiRatingLimiter, userController.handleLogin);
+    router.post("/api/auth/google/verify", loginApiRatingLimiter, googleController.handleGoogleLogin);
+    router.post("/api/auth/facebook/verify", loginApiRatingLimiter, facebookController.handleFacebookLogin);
+    router.post("/api/refresh-token", loginApiRatingLimiter, jwtController.handleRefreshToken);
     //viết link api lất tất cả người dùng ra cho react
     router.get("/api/get-all-users-for-react", userController.handleGetAllUsersForReact);
     router.post("/api/create-new-user-in-react", userController.handleCreateNewUserInReact);
     //xác thực email và số điện thoại người dùng
-    router.post("/api/send-email-otp", userController.sendEmailOTP);
-    router.post("/api/verify-email-otp", userController.verifyEmailOTP);
+    router.post("/api/send-email-otp", otpApiRateLimiter, userController.sendEmailOTP);
+    router.post("/api/verify-email-otp", otpApiRateLimiter, userController.verifyEmailOTP);
 
-    router.post("/api/send-phone-otp", userController.sendPhoneOTP);
-    router.post("/api/verify-phone-otp", userController.verifyPhoneOTP);
+    router.post("/api/send-phone-otp", otpApiRateLimiter, userController.sendPhoneOTP);
+    router.post("/api/verify-phone-otp", otpApiRateLimiter, userController.verifyPhoneOTP);
 
     router.put("/api/edit-user-in-react", userController.handleEditUserInReact);
     router.delete("/api/delete-user-in-react", userController.handleDeleteUserInReact);
