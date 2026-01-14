@@ -56,19 +56,39 @@ let recommendDoctorsForPatientService = async (patientId) => {
 
         const targetSpecialtyId = lastBooking?.doctorHasAppointmentWithPatients?.Doctor_infor?.specialtyId || null;
 
-        // ===== 3. Lấy danh sách bác sĩ =====
+        // ===== 3. Lấy danh sách bác sĩ - FIXED: Tách riêng rating query =====
         const doctors = await db.User.findAll({
             where: { roleId: "R2" },
             include: [
-                { model: db.Allcode, as: "positionData", attributes: ["value_Eng", "value_Vie"] },
+                {
+                    model: db.Allcode,
+                    as: "positionData",
+                    attributes: ["value_Eng", "value_Vie"],
+                },
                 {
                     model: db.Doctor_infor,
-                    attributes: { exclude: ["id", "doctorId"] },
+                    attributes: { exclude: ["id"] },
                     include: [
-                        { model: db.Allcode, as: "priceTypeData", attributes: ["value_Eng", "value_Vie"] },
-                        { model: db.Allcode, as: "provinceTypeData", attributes: ["value_Eng", "value_Vie"] },
-                        { model: db.Allcode, as: "paymentTypeData", attributes: ["value_Eng", "value_Vie"] },
-                        { model: db.Specialty, as: "belongToSpecialty", attributes: ["name"] },
+                        {
+                            model: db.Allcode,
+                            as: "priceTypeData",
+                            attributes: ["value_Eng", "value_Vie"],
+                        },
+                        {
+                            model: db.Allcode,
+                            as: "provinceTypeData",
+                            attributes: ["value_Eng", "value_Vie"],
+                        },
+                        {
+                            model: db.Allcode,
+                            as: "paymentTypeData",
+                            attributes: ["value_Eng", "value_Vie"],
+                        },
+                        {
+                            model: db.Specialty,
+                            as: "belongToSpecialty",
+                            attributes: ["name"],
+                        },
                     ],
                 },
                 {
@@ -82,18 +102,24 @@ let recommendDoctorsForPatientService = async (patientId) => {
                         },
                     ],
                 },
-                {
-                    model: db.DoctorPackageRate,
-                    as: "doctorRatings",
-                    attributes: [],
-                },
             ],
-            attributes: {
-                include: [[fn("AVG", col("doctorRatings.rating")), "avgRating"]],
-            },
-            group: ["User.id", "Doctor_infor.id"],
+        });
+
+        // ===== Lấy rating riêng cho từng doctor =====
+        const doctorIds = doctors.map((d) => d.id);
+        const ratings = await db.DoctorPackageRate.findAll({
+            where: { doctorId: doctorIds },
+            attributes: ["doctorId", [fn("AVG", col("rating")), "avgRating"], [fn("COUNT", col("id")), "ratingCount"]],
+            group: ["doctorId"],
             raw: true,
-            nest: true,
+        });
+
+        const ratingMap = {};
+        ratings.forEach((r) => {
+            ratingMap[r.doctorId] = {
+                avgRating: Number(r.avgRating) || 0,
+                ratingCount: Number(r.ratingCount) || 0,
+            };
         });
 
         // ===== 4. Lịch sử khám + thời gian gần nhất =====
@@ -114,11 +140,13 @@ let recommendDoctorsForPatientService = async (patientId) => {
 
         // ===== 5. Tính điểm recommendation (FULL) =====
         const scoredDoctors = doctors.map((doctor) => {
+            const doctorData = doctor.get({ plain: true });
+
             /** 1. Specialty score */
-            const specialtyScore = targetSpecialtyId && doctor.Doctor_infor?.specialtyId === targetSpecialtyId ? 1 : 0;
+            const specialtyScore = targetSpecialtyId && doctorData.Doctor_infor?.specialtyId === targetSpecialtyId ? 1 : 0;
 
             /** 2. History score (time decay) */
-            const history = historyMap[doctor.id];
+            const history = historyMap[doctorData.id];
             let historyScore = 0;
 
             if (history?.lastVisitDate) {
@@ -127,12 +155,13 @@ let recommendDoctorsForPatientService = async (patientId) => {
             }
 
             /** 3. Rating score */
-            const avgRating = doctor.avgRating ? Number(doctor.avgRating) : 0;
-            const ratingCount = doctor.doctorRatingsCount || 1;
+            const ratingData = ratingMap[doctorData.id] || { avgRating: 0, ratingCount: 0 };
+            const avgRating = ratingData.avgRating;
+            const ratingCount = ratingData.ratingCount;
             const ratingScore = calculateConfidenceRating(avgRating, ratingCount);
 
             /** 4. Price score */
-            const price = Number(doctor.Doctor_infor?.priceTypeData?.value_Vie) || null;
+            const price = Number(doctorData.Doctor_infor?.priceTypeData?.value_Vie) || null;
             const priceScore = calculatePriceScore(price);
 
             /** 5. Diversity bonus */
@@ -142,8 +171,9 @@ let recommendDoctorsForPatientService = async (patientId) => {
             const finalScore = specialtyScore * 0.35 + historyScore * 0.2 + ratingScore * 0.2 + priceScore * 0.15 + diversityBonus * 0.1;
 
             return {
-                ...doctor,
+                ...doctorData,
                 avgRating,
+                ratingCount,
                 visitedCount: history?.visitCount || 0,
                 price,
                 finalScore,
@@ -200,7 +230,7 @@ let recommendPackagesForPatientService = async (patientId) => {
 
         const targetSpecialtyId = lastPackageBooking?.examPackage?.specialtyId || null;
 
-        // ===== 3. Lấy danh sách tất cả gói khám =====
+        // ===== 3. Lấy danh sách tất cả gói khám - FIXED =====
         const packages = await db.ExamPackage_specialty_medicalFacility.findAll({
             include: [
                 {
@@ -214,11 +244,6 @@ let recommendPackagesForPatientService = async (patientId) => {
                     attributes: ["id", "name"],
                 },
                 {
-                    model: db.DoctorPackageRate,
-                    as: "packageRatings",
-                    attributes: [],
-                },
-                {
                     model: db.ComplexMedicalFacility,
                     as: "medicalFacilityPackage",
                     attributes: ["id", "name", "address"],
@@ -226,31 +251,43 @@ let recommendPackagesForPatientService = async (patientId) => {
             ],
             attributes: {
                 exclude: ["htmlDescription", "markdownDescription", "htmlCategory", "markdownCategory"],
-                include: [
-                    [fn("AVG", col("packageRatings.rating")), "avgRating"],
-                    [fn("COUNT", col("packageRatings.id")), "ratingCount"],
-                ],
             },
-
-            group: ["ExamPackage_specialty_medicalFacility.id"],
-            raw: true,
-            nest: true,
         });
 
-        // ===== 4. Lịch sử khám gói của bệnh nhân (DONE) =====
+        // ===== Lấy rating riêng =====
+        const packageIds = packages.map((p) => p.id);
+        const ratings = await db.DoctorPackageRate.findAll({
+            where: { packageId: packageIds },
+            attributes: ["packageId", [fn("AVG", col("rating")), "avgRating"], [fn("COUNT", col("id")), "ratingCount"]],
+            group: ["packageId"],
+            raw: true,
+        });
+
+        const ratingMap = {};
+        ratings.forEach((r) => {
+            ratingMap[r.packageId] = {
+                avgRating: Number(r.avgRating) || 0,
+                ratingCount: Number(r.ratingCount) || 0,
+            };
+        });
+
+        // ===== 4. Lịch sử khám gói của bệnh nhân (DONE) - FIXED =====
+        // Lấy danh sách examPackageId có kết quả DONE
+        const doneResults = await db.ExamPackage_result.findAll({
+            where: { status: "DONE" },
+            attributes: ["bookingId"],
+            raw: true,
+        });
+
+        const doneBookingIds = doneResults.map((r) => r.bookingId);
+
+        // Query packageHistory với điều kiện booking đã DONE
         const packageHistory = await db.ExamPackage_booking.findAll({
             where: {
                 patientId,
                 statusId: "S3",
+                id: doneBookingIds, // Chỉ lấy booking có kết quả DONE
             },
-            include: [
-                {
-                    model: db.ExamPackage_result,
-                    as: "examPackageResult",
-                    where: { status: "DONE" },
-                    required: true,
-                },
-            ],
             attributes: ["examPackageId", [fn("COUNT", col("examPackageId")), "visitCount"], [fn("MAX", col("date")), "lastVisitDate"]],
             group: ["examPackageId"],
             raw: true,
@@ -266,11 +303,13 @@ let recommendPackagesForPatientService = async (patientId) => {
 
         // ===== 5. Tính điểm recommendation =====
         const scoredPackages = packages.map((pkg) => {
+            const pkgData = pkg.get({ plain: true });
+
             /** 1. Specialty score */
-            const specialtyScore = targetSpecialtyId && pkg.specialtyId === targetSpecialtyId ? 1 : 0;
+            const specialtyScore = targetSpecialtyId && pkgData.specialtyId === targetSpecialtyId ? 1 : 0;
 
             /** 2. History score */
-            const history = historyMap[pkg.id];
+            const history = historyMap[pkgData.id];
             let historyScore = 0;
 
             if (history?.lastVisitDate) {
@@ -279,12 +318,13 @@ let recommendPackagesForPatientService = async (patientId) => {
             }
 
             /** 3. Rating score */
-            const avgRating = pkg.avgRating ? Number(pkg.avgRating) : 0;
-            const ratingCount = pkg.ratingCount ? Number(pkg.ratingCount) : 0;
+            const ratingData = ratingMap[pkgData.id] || { avgRating: 0, ratingCount: 0 };
+            const avgRating = ratingData.avgRating;
+            const ratingCount = ratingData.ratingCount;
             const ratingScore = calculateConfidenceRating(avgRating, ratingCount);
 
             /** 4. Price score */
-            const price = Number(pkg.priceDataForPackage?.value_Vie) || null;
+            const price = Number(pkgData.priceDataForPackage?.value_Vie) || null;
             const priceScore = calculatePriceScore(price);
 
             /** 5. Diversity bonus */
@@ -294,7 +334,7 @@ let recommendPackagesForPatientService = async (patientId) => {
             const finalScore = specialtyScore * 0.35 + historyScore * 0.2 + ratingScore * 0.2 + priceScore * 0.15 + diversityBonus * 0.1;
 
             return {
-                ...pkg,
+                ...pkgData,
                 avgRating,
                 ratingCount,
                 visitedCount: history?.visitCount || 0,
