@@ -62,7 +62,7 @@ const handleGoogleLogin = async (req, res) => {
         // ✅ Gửi refreshToken qua cookie (bảo mật)
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production", // bật Secure khi deploy
+            secure: true, // bật Secure khi deploy
             sameSite: "none",
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày
         });

@@ -27,7 +27,7 @@ let handleLogin = async (req, res) => {
 
         res.cookie("refreshToken", result.refreshToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production", // true khi deploy HTTPS
+            secure: true, // true khi deploy HTTPS
             sameSite: "none",
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày
         });

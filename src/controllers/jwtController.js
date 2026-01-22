@@ -12,7 +12,7 @@ let handleRefreshToken = async (req, res) => {
         // ✅ Lưu refresh token mới vào cookie
         res.cookie("refreshToken", result.refreshToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
+            secure: true,
             sameSite: "none",
             maxAge: 7 * 24 * 60 * 60 * 1000,
         });
