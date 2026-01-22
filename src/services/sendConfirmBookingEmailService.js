@@ -10,6 +10,9 @@ let sendAEmail = async (sentData) => {
             user: process.env.SENDER_EMAIL,
             pass: process.env.EMAIL_APP_PASSWORD,
         },
+        tls: {
+            rejectUnauthorized: process.env.EMAIL_TLS_REJECT_UNAUTHORIZED === "true",
+        },
     });
 
     let getHtmlEmailDependLanguage = (sentData) => {
