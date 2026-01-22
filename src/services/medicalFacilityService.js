@@ -52,7 +52,7 @@ let createMedicalFacilityService = (inputData) => {
                             markdownEquipment: inputData.markdownEquipment,
                             image: inputData.image,
                         },
-                        { transaction }
+                        { transaction },
                     );
 
                     // Xử lý selectedSpecialty, sử dụng map để tạo nhiều bản ghi
@@ -414,13 +414,13 @@ let handlePatientBookingExamPackageService = async (data) => {
 
         if (!existingUser) {
             return {
-                errCode: 2,
+                errCode: 5,
                 errMessage: "Tài khoản không tồn tại!",
             };
         }
 
         // ===== 3. Check conflict lịch gói khám =====
-        let conflict = await db.ExamPackage_booking.findOne({
+        let conflictSamePackage = await db.ExamPackage_booking.findOne({
             where: {
                 patientId: existingUser.id,
                 examPackageId: data.packageId,
@@ -429,10 +429,43 @@ let handlePatientBookingExamPackageService = async (data) => {
             },
         });
 
-        if (conflict) {
+        if (conflictSamePackage) {
+            return {
+                errCode: 2,
+                errMessage: "Bạn đã đặt lịch gói khám này trong ngày đã chọn!",
+            };
+        }
+
+        let conflictSameTimeDoctor = await db.Booking.findOne({
+            where: {
+                patientId: existingUser.id,
+                date: data.date,
+                timeType: data.timeType,
+                statusId: { [db.Sequelize.Op.ne]: "S3" },
+            },
+        });
+
+        let conflictSameTimePackage = await db.ExamPackage_booking.findOne({
+            where: {
+                patientId: existingUser.id,
+                examPackageId: { [db.Sequelize.Op.ne]: data.packageId },
+                date: data.date,
+                timeType: data.timeType,
+                statusId: { [db.Sequelize.Op.ne]: "S3" },
+            },
+        });
+
+        if (conflictSameTimeDoctor) {
             return {
                 errCode: 3,
-                errMessage: "Bạn đã đặt lịch gói khám này trong ngày đã chọn!",
+                errMessage: "Bạn đã có lịch hẹn với bác sĩ tại thời điểm này rồi!",
+            };
+        }
+
+        if (conflictSameTimePackage) {
+            return {
+                errCode: 4,
+                errMessage: "Bạn đã có lịch khám với gói khám khác tại thời điểm này rồi!",
             };
         }
 
@@ -459,7 +492,7 @@ let handlePatientBookingExamPackageService = async (data) => {
 
         if (!packageInfor) {
             return {
-                errCode: 4,
+                errCode: 6,
                 errMessage: "Gói khám không tồn tại!",
             };
         }

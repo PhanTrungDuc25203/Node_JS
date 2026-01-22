@@ -201,7 +201,7 @@ let handlePatientBookingAppointmentService = async (data) => {
 
         if (!user) {
             return {
-                errCode: 1,
+                errCode: 5,
                 errMessage: "Tài khoản không tồn tại!",
             };
         }
@@ -223,7 +223,7 @@ let handlePatientBookingAppointmentService = async (data) => {
             };
         }
 
-        let conflictSameTime = await db.Booking.findOne({
+        let conflictSameTimeDoctor = await db.Booking.findOne({
             where: {
                 patientId: user.id,
                 doctorId: { [db.Sequelize.Op.ne]: data.doctorId },
@@ -233,10 +233,26 @@ let handlePatientBookingAppointmentService = async (data) => {
             },
         });
 
-        if (conflictSameTime) {
+        let conflictSameTimePackage = await db.ExamPackage_booking.findOne({
+            where:{
+                patientId: user.id,
+                date: data.date,
+                timeType: data.timeType,
+                statusId: { [db.Sequelize.Op.ne]: "S3" },
+            }
+        })
+
+        if (conflictSameTimeDoctor) {
             return {
                 errCode: 3,
-                errMessage: "Bạn đã có lịch hẹn khác trong cùng thời điểm này rồi!",
+                errMessage: "Bạn đã có lịch hẹn với bác sĩ khác tại thời điểm này rồi!",
+            };
+        }
+
+        if(conflictSameTimePackage) {
+            return {
+                errCode: 4,
+                errMessage: "Bạn đã có lịch khám với gói khám tại thời điểm này rồi!",
             };
         }
 
