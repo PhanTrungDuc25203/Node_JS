@@ -20,7 +20,7 @@ require("dotenv").config();
 // câu lệnh trên có thể gọi tới hàm config của thư viện dotenv và giúp
 // chạy được dòng "let port = process.env.PORT || 6969;"
 const allowedOrigins = process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(",").map((o) => o.trim().replace(/\/$/, "")) : [];
-
+console.log("Allowed Origins:", allowedOrigins);
 let app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -53,7 +53,11 @@ app.use(
             // Cho phép server-to-server, Postman
             if (!origin) return callback(null, true);
 
-            const normalizedOrigin = origin.replace(/\/$/, "");
+            const normalizedOrigin = origin.trim().replace(/\/+$/, "");
+
+            // Log để debug
+            console.log("Incoming origin:", normalizedOrigin);
+            console.log("Is allowed?", allowedOrigins.includes(normalizedOrigin));
 
             if (allowedOrigins.includes(normalizedOrigin)) {
                 return callback(null, true);
