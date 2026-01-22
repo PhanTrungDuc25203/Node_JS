@@ -183,8 +183,6 @@ let buildUrlPaymentPage = (doctorId, token) => {
 // };
 
 let handlePatientBookingAppointmentService = async (data) => {
-    const transaction = await db.sequelize.transaction();
-
     try {
         // ===== 1. Validate input =====
         if (!data.email || !data.doctorId || !data.timeType || !data.date || !data.fullname || !data.appointmentMoment || !data.phoneNumber || !data.address || !data.selectedGender || !data.selectedPaymentMethod) {
@@ -234,13 +232,13 @@ let handlePatientBookingAppointmentService = async (data) => {
         });
 
         let conflictSameTimePackage = await db.ExamPackage_booking.findOne({
-            where:{
+            where: {
                 patientId: user.id,
                 date: data.date,
                 timeType: data.timeType,
                 statusId: { [db.Sequelize.Op.ne]: "S3" },
-            }
-        })
+            },
+        });
 
         if (conflictSameTimeDoctor) {
             return {
@@ -249,7 +247,7 @@ let handlePatientBookingAppointmentService = async (data) => {
             };
         }
 
-        if(conflictSameTimePackage) {
+        if (conflictSameTimePackage) {
             return {
                 errCode: 4,
                 errMessage: "Bạn đã có lịch khám với gói khám tại thời điểm này rồi!",
@@ -264,7 +262,7 @@ let handlePatientBookingAppointmentService = async (data) => {
         let firstName = lastSpaceIndex === -1 ? fullName : fullName.slice(lastSpaceIndex + 1);
         let lastName = lastSpaceIndex === -1 ? "" : fullName.slice(0, lastSpaceIndex);
 
-        // ===== 5. TRANSACTION: ghi dữ liệu =====
+        // ===== 5. Ghi DB (KHÔNG TRANSACTION) =====
 
         // 5.1 Tạo hoặc lấy bệnh nhân
         let [patient] = await db.User.findOrCreate({
@@ -278,7 +276,6 @@ let handlePatientBookingAppointmentService = async (data) => {
                 gender: data.selectedGender,
                 roleId: "R3",
             },
-            transaction,
         });
 
         // 5.2 Update thông tin nếu cần
@@ -289,38 +286,33 @@ let handlePatientBookingAppointmentService = async (data) => {
             if (!patient.address && data.address) updateData.address = data.address;
 
             if (Object.keys(updateData).length > 0) {
-                await patient.update(updateData, { transaction });
+                await patient.update(updateData);
             }
         }
 
         // 5.3 Tạo booking
-        await db.Booking.create(
-            {
-                statusId: "S1",
-                doctorId: data.doctorId,
-                patientId: patient.id,
-                date: data.date,
-                timeType: data.timeType,
-                patientPhoneNumber: data.phoneNumber,
-                patientBirthday: data.birthday,
-                patientAddress: data.address,
-                patientGender: data.selectedGender,
-                examReason: data.reason,
-                paymentMethod: data.selectedPaymentMethod || "PM3",
-                paymentStatus: "PT1",
-                paidAmount: 0,
-                token,
-            },
-            { transaction }
-        );
+        await db.Booking.create({
+            statusId: "S1",
+            doctorId: data.doctorId,
+            patientId: patient.id,
+            date: data.date,
+            timeType: data.timeType,
+            patientPhoneNumber: data.phoneNumber,
+            patientBirthday: data.birthday,
+            patientAddress: data.address,
+            patientGender: data.selectedGender,
+            examReason: data.reason,
+            paymentMethod: data.selectedPaymentMethod || "PM3",
+            paymentStatus: "PT1",
+            paidAmount: 0,
+            token,
+        });
 
-        // ===== 6. COMMIT =====
-        await transaction.commit();
-
-        // ===== 7. SAU COMMIT mới gửi email =====
+        // ===== 6. Gửi email =====
         let timeframeData = await db.Allcode.findOne({
             where: { keyMap: data.timeType, type: "TIME" },
         });
+
         let doctorInfor = await db.User.findOne({
             where: { id: data.doctorId },
             attributes: {
@@ -329,12 +321,9 @@ let handlePatientBookingAppointmentService = async (data) => {
             include: [
                 { model: db.ArticleMarkdown, attributes: ["htmlContent", "markdownContent", "description"] },
                 { model: db.Allcode, as: "positionData", attributes: ["value_Eng", "value_Vie"] },
-
                 {
                     model: db.Doctor_infor,
-                    attributes: {
-                        exclude: ["id", "doctorId"],
-                    },
+                    attributes: { exclude: ["id", "doctorId"] },
                     include: [
                         { model: db.Allcode, as: "priceTypeData", attributes: ["value_Eng", "value_Vie"] },
                         { model: db.Allcode, as: "provinceTypeData", attributes: ["value_Eng", "value_Vie"] },
@@ -344,9 +333,7 @@ let handlePatientBookingAppointmentService = async (data) => {
                 },
                 {
                     model: db.Doctor_specialty_medicalFacility,
-                    attributes: {
-                        exclude: ["id", "createdAt", "updatedAt"],
-                    },
+                    attributes: { exclude: ["id", "createdAt", "updatedAt"] },
                     include: [
                         {
                             model: db.ComplexMedicalFacility,
@@ -378,10 +365,7 @@ let handlePatientBookingAppointmentService = async (data) => {
             errMessage: "Booking created successfully!",
         };
     } catch (e) {
-        // ===== ROLLBACK nếu có lỗi =====
-        await transaction.rollback();
-        console.error("Booking transaction failed:", e);
-
+        console.error("Booking failed:", e);
         return {
             errCode: -1,
             errMessage: "Server error!",

@@ -107,9 +107,9 @@ const buildExamPackageResultHtml = (template, result) => {
 
 let sendMedicalReportToPatient = async (sentData) => {
     let transporter = nodemailer.createTransport({
-        host: "smtp.gmail.com",
-        port: 587,
-        secure: false,
+        host: process.env.EMAIL_HOST,
+        port: Number(process.env.EMAIL_PORT),
+        secure: process.env.EMAIL_SECURE === "true",
         auth: {
             user: process.env.SENDER_EMAIL,
             pass: process.env.EMAIL_APP_PASSWORD,

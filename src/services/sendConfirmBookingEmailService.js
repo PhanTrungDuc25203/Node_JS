@@ -3,9 +3,9 @@ import nodemailer from "nodemailer";
 
 let sendAEmail = async (sentData) => {
     let transporter = nodemailer.createTransport({
-        host: "smtp.gmail.com",
-        port: 587,
-        secure: false, // true for port 465, false for other ports
+        host: process.env.EMAIL_HOST,
+        port: Number(process.env.EMAIL_PORT),
+        secure: process.env.EMAIL_SECURE === "true",
         auth: {
             user: process.env.SENDER_EMAIL,
             pass: process.env.EMAIL_APP_PASSWORD,

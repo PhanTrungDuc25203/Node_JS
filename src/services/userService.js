@@ -156,7 +156,7 @@ let createNewUserInReact = (data) => {
                         },
                         {
                             where: { email: data.email },
-                        }
+                        },
                     );
 
                     resolve({
@@ -781,9 +781,9 @@ let sendEmailOTP = (email) => {
             emailOTPStore[email] = otp;
 
             let transporter = nodemailer.createTransport({
-                host: "smtp.gmail.com",
-                port: 587,
-                secure: false,
+                host: process.env.EMAIL_HOST,
+                port: Number(process.env.EMAIL_PORT),
+                secure: process.env.EMAIL_SECURE === "true",
                 service: "gmail",
                 auth: {
                     user: process.env.SENDER_EMAIL,
