@@ -19,6 +19,8 @@ import { Server } from "socket.io";
 require("dotenv").config();
 // câu lệnh trên có thể gọi tới hàm config của thư viện dotenv và giúp
 // chạy được dòng "let port = process.env.PORT || 6969;"
+const allowedOrigins = process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(",").map((o) => o.trim().replace(/\/$/, "")) : [];
+
 let app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -38,12 +40,31 @@ io.on("connection", (socket) => {
 app.use(helmet());
 app.use(morgan("combined"));
 app.use(compression());
-// app.use(cors({ origin: true }));
+// app.use(
+//     cors({
+//         credentials: true,
+//         origin: true,
+//     }),
+// );
+
 app.use(
     cors({
+        origin: function (origin, callback) {
+            // Cho phép server-to-server, Postman
+            if (!origin) return callback(null, true);
+
+            const normalizedOrigin = origin.replace(/\/$/, "");
+
+            if (allowedOrigins.includes(normalizedOrigin)) {
+                return callback(null, true);
+            }
+
+            return callback(new Error(`CORS blocked origin: ${origin}`));
+        },
         credentials: true,
-        origin: true,
-    })
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allowedHeaders: ["Origin", "X-Requested-With", "Content-Type", "Accept", "Authorization"],
+    }),
 );
 
 app.use(function (req, res, next) {
