@@ -183,28 +183,34 @@ let buildUrlPaymentPage = (doctorId, token) => {
 // };
 
 let handlePatientBookingAppointmentService = async (data) => {
+    const transaction = await db.sequelize.transaction();
+
     try {
         // ===== 1. Validate input =====
         if (!data.email || !data.doctorId || !data.timeType || !data.date || !data.fullname || !data.appointmentMoment || !data.phoneNumber || !data.address || !data.selectedGender || !data.selectedPaymentMethod) {
+            await transaction.rollback();
             return {
                 errCode: 1,
                 errMessage: "Missing parameter(s)!",
             };
         }
 
-        // ===== 2. Lấy user (KHÔNG ghi DB) =====
+        // ===== 2. Lấy user =====
         let user = await db.User.findOne({
             where: { email: data.email },
+            transaction,
+            lock: transaction.LOCK.UPDATE,
         });
 
         if (!user) {
+            await transaction.rollback();
             return {
                 errCode: 5,
                 errMessage: "Tài khoản không tồn tại!",
             };
         }
 
-        // ===== 3. Check conflict =====
+        // ===== 3. Check conflict (GIỮ NGUYÊN LOGIC) =====
         let conflictSameDoctor = await db.Booking.findOne({
             where: {
                 patientId: user.id,
@@ -212,9 +218,12 @@ let handlePatientBookingAppointmentService = async (data) => {
                 date: data.date,
                 statusId: { [db.Sequelize.Op.ne]: "S3" },
             },
+            transaction,
+            lock: transaction.LOCK.UPDATE,
         });
 
         if (conflictSameDoctor) {
+            await transaction.rollback();
             return {
                 errCode: 2,
                 errMessage: "Bạn đã có lịch hẹn với bác sĩ này trong ngày này rồi!",
@@ -229,7 +238,17 @@ let handlePatientBookingAppointmentService = async (data) => {
                 timeType: data.timeType,
                 statusId: { [db.Sequelize.Op.ne]: "S3" },
             },
+            transaction,
+            lock: transaction.LOCK.UPDATE,
         });
+
+        if (conflictSameTimeDoctor) {
+            await transaction.rollback();
+            return {
+                errCode: 3,
+                errMessage: "Bạn đã có lịch hẹn với bác sĩ khác tại thời điểm này rồi!",
+            };
+        }
 
         let conflictSameTimePackage = await db.ExamPackage_booking.findOne({
             where: {
@@ -238,16 +257,12 @@ let handlePatientBookingAppointmentService = async (data) => {
                 timeType: data.timeType,
                 statusId: { [db.Sequelize.Op.ne]: "S3" },
             },
+            transaction,
+            lock: transaction.LOCK.UPDATE,
         });
 
-        if (conflictSameTimeDoctor) {
-            return {
-                errCode: 3,
-                errMessage: "Bạn đã có lịch hẹn với bác sĩ khác tại thời điểm này rồi!",
-            };
-        }
-
         if (conflictSameTimePackage) {
+            await transaction.rollback();
             return {
                 errCode: 4,
                 errMessage: "Bạn đã có lịch khám với gói khám tại thời điểm này rồi!",
@@ -262,9 +277,7 @@ let handlePatientBookingAppointmentService = async (data) => {
         let firstName = lastSpaceIndex === -1 ? fullName : fullName.slice(lastSpaceIndex + 1);
         let lastName = lastSpaceIndex === -1 ? "" : fullName.slice(0, lastSpaceIndex);
 
-        // ===== 5. Ghi DB (KHÔNG TRANSACTION) =====
-
-        // 5.1 Tạo hoặc lấy bệnh nhân
+        // ===== 5. Tạo hoặc lấy bệnh nhân =====
         let [patient] = await db.User.findOrCreate({
             where: { email: data.email },
             defaults: {
@@ -276,9 +289,11 @@ let handlePatientBookingAppointmentService = async (data) => {
                 gender: data.selectedGender,
                 roleId: "R3",
             },
+            transaction,
+            lock: transaction.LOCK.UPDATE,
         });
 
-        // 5.2 Update thông tin nếu cần
+        // ===== 6. Update thông tin nếu cần =====
         if (data.needUpdateProfileInfo === true) {
             let updateData = {};
             if (!patient.gender && data.selectedGender) updateData.gender = data.selectedGender;
@@ -286,29 +301,35 @@ let handlePatientBookingAppointmentService = async (data) => {
             if (!patient.address && data.address) updateData.address = data.address;
 
             if (Object.keys(updateData).length > 0) {
-                await patient.update(updateData);
+                await patient.update(updateData, { transaction });
             }
         }
 
-        // 5.3 Tạo booking
-        await db.Booking.create({
-            statusId: "S1",
-            doctorId: data.doctorId,
-            patientId: patient.id,
-            date: data.date,
-            timeType: data.timeType,
-            patientPhoneNumber: data.phoneNumber,
-            patientBirthday: data.birthday,
-            patientAddress: data.address,
-            patientGender: data.selectedGender,
-            examReason: data.reason,
-            paymentMethod: data.selectedPaymentMethod || "PM3",
-            paymentStatus: "PT1",
-            paidAmount: 0,
-            token,
-        });
+        // ===== 7. TẠO BOOKING (ĐIỂM QUYẾT ĐỊNH TRANH CHẤP) =====
+        await db.Booking.create(
+            {
+                statusId: "S1",
+                doctorId: data.doctorId,
+                patientId: patient.id,
+                date: data.date,
+                timeType: data.timeType,
+                patientPhoneNumber: data.phoneNumber,
+                patientBirthday: data.birthday,
+                patientAddress: data.address,
+                patientGender: data.selectedGender,
+                examReason: data.reason,
+                paymentMethod: data.selectedPaymentMethod || "PM3",
+                paymentStatus: "PT1",
+                paidAmount: 0,
+                token,
+            },
+            { transaction },
+        );
 
-        // ===== 6. Gửi email =====
+        await transaction.commit();
+
+        // ===== 8. Email giữ nguyên (ngoài transaction) =====
+        // (phần này bạn có thể giữ nguyên code cũ)
         let timeframeData = await db.Allcode.findOne({
             where: { keyMap: data.timeType, type: "TIME" },
         });
@@ -365,6 +386,15 @@ let handlePatientBookingAppointmentService = async (data) => {
             errMessage: "Booking created successfully!",
         };
     } catch (e) {
+        await transaction.rollback();
+
+        if (e.name === "SequelizeUniqueConstraintError") {
+            return {
+                errCode: 6,
+                errMessage: "Khung giờ này đã có người đặt!",
+            };
+        }
+
         console.error("Booking failed:", e);
         return {
             errCode: -1,
@@ -769,6 +799,7 @@ let getPatientAppointmentsNearestService = (patientId) => {
                     return a.timeValue - b.timeValue;
                 })
                 .slice(0, 3);
+            // sortedBookings.reverse();
 
             return resolve({
                 errCode: 0,

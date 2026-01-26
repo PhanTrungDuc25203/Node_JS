@@ -7,9 +7,10 @@ import twilio from "twilio";
 import { generateAccessToken, generateRefreshToken, saveRefreshToken } from "./jwtService";
 
 const salt = bcrypt.genSaltSync(10);
+const OTP_EXPIRE_TIME = 5 * 60 * 1000;
 const emailOTPStore = {};
+const phoneOTPStore = {};
 const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-let phoneOTPStore = {};
 
 let hashUserPassword = (password) => {
     return new Promise(async (resolve, reject) => {
@@ -778,7 +779,10 @@ let sendEmailOTP = (email) => {
         try {
             const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-            emailOTPStore[email] = otp;
+            emailOTPStore[email] = {
+                otp,
+                expireAt: Date.now() + OTP_EXPIRE_TIME,
+            };
 
             let transporter = nodemailer.createTransport({
                 host: process.env.EMAIL_HOST,
@@ -789,9 +793,6 @@ let sendEmailOTP = (email) => {
                     user: process.env.SENDER_EMAIL,
                     pass: process.env.EMAIL_APP_PASSWORD,
                 },
-                tls: {
-                    rejectUnauthorized: process.env.EMAIL_TLS_REJECT_UNAUTHORIZED === "true",
-                },
             });
 
             await transporter.sendMail({
@@ -799,12 +800,16 @@ let sendEmailOTP = (email) => {
                 to: email,
                 subject: "Mã OTP xác thực của bạn",
                 html: `
-                <h2>Mã OTP xác thực của bạn là: <b>${otp}</b></h2>
-                <span>Vui lòng không chia sẻ mã OTP này cho bất cứ ai!</span>
+                    <h2>Mã OTP của bạn: <b>${otp}</b></h2>
+                    <p>Mã có hiệu lực trong <b>5 phút</b>.</p>
                 `,
             });
 
-            resolve({ errCode: 0, message: "OTP sent" });
+            resolve({
+                errCode: 0,
+                message: "OTP sent",
+                expireIn: OTP_EXPIRE_TIME / 1000,
+            });
         } catch (e) {
             reject(e);
         }
@@ -813,12 +818,23 @@ let sendEmailOTP = (email) => {
 
 let verifyEmailOTP = (email, otp) => {
     return new Promise((resolve) => {
-        if (emailOTPStore[email] === otp) {
-            delete emailOTPStore[email];
-            resolve({ errCode: 0, message: "OTP correct" });
-        } else {
-            resolve({ errCode: 1, message: "OTP incorrect" });
+        const record = emailOTPStore[email];
+
+        if (!record) {
+            return resolve({ errCode: 2, message: "OTP not found" });
         }
+
+        if (Date.now() > record.expireAt) {
+            delete emailOTPStore[email];
+            return resolve({ errCode: 3, message: "OTP expired" });
+        }
+
+        if (record.otp !== otp) {
+            return resolve({ errCode: 1, message: "OTP incorrect" });
+        }
+
+        delete emailOTPStore[email];
+        resolve({ errCode: 0, message: "OTP correct" });
     });
 };
 
@@ -826,20 +842,24 @@ let sendPhoneOTP = (phoneNumber) => {
     return new Promise(async (resolve, reject) => {
         try {
             const otp = Math.floor(100000 + Math.random() * 900000).toString();
-            phoneOTPStore[phoneNumber] = otp;
 
-            let res = await client.verify.v2.services(process.env.TWILIO_VERIFY_SERVICE_SID).verifications.create({
-                body: `
-                    Mã OTP xác thực của bạn là: ${otp}
-                    Vui lòng không chia sẽ mã này cho bất kỳ ai!
-                `,
-                to: phoneNumber,
-                channel: "sms",
+            phoneOTPStore[phoneNumber] = {
+                otp,
+                expireAt: Date.now() + OTP_EXPIRE_TIME,
+            };
+
+            await client.verify.v2
+                .services(process.env.TWILIO_VERIFY_SERVICE_SID)
+                .verifications.create({
+                    to: phoneNumber,
+                    channel: "sms",
+                });
+
+            resolve({
+                errCode: 0,
+                message: "OTP sent",
+                expireIn: OTP_EXPIRE_TIME / 1000,
             });
-
-            // console.log("Check SMS phonenumber response: ", res);
-
-            resolve({ errCode: 0, message: "OTP sent" });
         } catch (e) {
             reject(e);
         }
