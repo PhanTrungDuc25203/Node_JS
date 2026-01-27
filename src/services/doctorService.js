@@ -393,8 +393,46 @@ let getExtraInforDoctorByIDService = (inputId) => {
                     raw: false,
                     nest: true,
                 });
+                let doctorInfor = await db.User.findOne({
+                    where: { id: inputId },
+                    attributes: {
+                        exclude: ["id", "email", "password", "address", "phoneNumber", "roleId", "positionId"],
+                    },
+                    include: [
+                        { model: db.ArticleMarkdown, attributes: ["htmlContent", "markdownContent", "description"] },
+                        { model: db.Allcode, as: "positionData", attributes: ["value_Eng", "value_Vie"] },
+                        {
+                            model: db.Doctor_infor,
+                            attributes: { exclude: ["id", "doctorId"] },
+                            include: [
+                                { model: db.Allcode, as: "priceTypeData", attributes: ["value_Eng", "value_Vie"] },
+                                { model: db.Allcode, as: "provinceTypeData", attributes: ["value_Eng", "value_Vie"] },
+                                { model: db.Allcode, as: "paymentTypeData", attributes: ["value_Eng", "value_Vie"] },
+                                { model: db.Specialty, as: "belongToSpecialty", attributes: ["name"] },
+                            ],
+                        },
+                        {
+                            model: db.Doctor_specialty_medicalFacility,
+                            attributes: { exclude: ["id", "createdAt", "updatedAt"] },
+                            include: [
+                                {
+                                    model: db.ComplexMedicalFacility,
+                                    as: "medicalFacilityDoctorAndSpecialty",
+                                    attributes: ["id", "name", "address"],
+                                },
+                            ],
+                        },
+                    ],
+                });
                 if (!data) {
                     data = {};
+                }
+                if (doctorInfor?.Doctor_specialty_medicalFacility?.medicalFacilityDoctorAndSpecialty) {
+                    data.dataValues.workPlace = {
+                        hospitalId: doctorInfor.Doctor_specialty_medicalFacility.medicalFacilityDoctorAndSpecialty.id,
+                        hospitalName: doctorInfor.Doctor_specialty_medicalFacility.medicalFacilityDoctorAndSpecialty.name,
+                        hospitalAddress: doctorInfor.Doctor_specialty_medicalFacility.medicalFacilityDoctorAndSpecialty.address,
+                    };
                 }
                 resolve({
                     errCode: 0,

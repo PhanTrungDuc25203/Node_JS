@@ -210,12 +210,12 @@ let handlePatientBookingAppointmentService = async (data) => {
             };
         }
 
-        // ===== 3. Check conflict (GIỮ NGUYÊN LOGIC) =====
+        // ===== 3. Check conflict =====
         let conflictSameDoctor = await db.Booking.findOne({
             where: {
                 patientId: user.id,
                 doctorId: data.doctorId,
-                date: data.date,
+                // date: data.date,
                 statusId: { [db.Sequelize.Op.ne]: "S3" },
             },
             transaction,
@@ -226,7 +226,8 @@ let handlePatientBookingAppointmentService = async (data) => {
             await transaction.rollback();
             return {
                 errCode: 2,
-                errMessage: "Bạn đã có lịch hẹn với bác sĩ này trong ngày này rồi!",
+                // errMessage: "Bạn đã có lịch hẹn với bác sĩ này trong ngày này rồi!",
+                errMessage: "Bạn đã có lịch hẹn với bác sĩ này rồi!",
             };
         }
 
