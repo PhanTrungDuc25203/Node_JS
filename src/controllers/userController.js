@@ -115,7 +115,8 @@ let getAllCodesData = async (req, res) => {
 let getAllRelativeInforsOfCurrentSystemUser = async (req, res) => {
     try {
         setTimeout(async () => {
-            let data = await userService.getAllRelativeInforsOfCurrentSystemUserService(req.query.email);
+            let userEmail = req.user.email;
+            let data = await userService.getAllRelativeInforsOfCurrentSystemUserService(userEmail);
             return res.status(200).json(data);
         }, 500);
     } catch (e) {

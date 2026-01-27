@@ -599,13 +599,13 @@ let saveRateAndReviewAboutPackageService = (data) => {
                 userId: bookedPackage.patientId,
                 userEmail: data.userEmail,
 
-                doctorId: "",
+                doctorId: -1,
                 doctorEmail: "",
 
                 packageId: data.packageId,
-                packageName: data.packageName || "",
+                packageName: data.packageName || null,
 
-                appointmentId: "",
+                appointmentId: -1,
                 paidPackageId: bookedPackage.id,
 
                 rating: data.rating,

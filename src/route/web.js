@@ -83,7 +83,7 @@ let initWebRoutes = (app) => {
     //lấy dữ liệu cho trang specialty details, bao gồm thông tin của specialty và bác sĩ
     router.get("/api/get-specialty-by-id", specialtyController.getSpecialtyById);
     //lấy tất cả dữ liệu liên quan đến người đang sử dụng hệ thống bằng gamil của họ
-    router.get("/api/get-all-relative-infors-of-current-system-user", userController.getAllRelativeInforsOfCurrentSystemUser);
+    router.get("/api/get-all-relative-infors-of-current-system-user", authMiddleware, userController.getAllRelativeInforsOfCurrentSystemUser);
     // router.get("/api/get-all-relative-bookings-of-current-system-user", userController.getAllRelativeBookingsOfCurrentSystemUser);
     // router.get("/api/get-all-relative-bookings-of-current-system-user-2", userController.getAllRelativeBookingsOfCurrentSystemUser2);
     router.get("/api/get-all-relative-bookings-of-current-system-user", userController.getAllRelativeBookingsOfCurrentSystemUser);
