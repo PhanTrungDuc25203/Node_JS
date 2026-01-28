@@ -185,6 +185,19 @@ let getDoctorStatisticMonthlyPatients = async (req, res) => {
     }
 };
 
+let cancelBookedAppointment = async (req, res) => {
+    try {
+        let response = await doctorService.cancelBookedAppointmentService(req.body);
+        return res.status(200).json(response);
+    } catch (e) {
+        console.log(e);
+        return res.status(500).json({
+            errCode: -1,
+            errMessage: "Cancel booked appointment error from server!",
+        });
+    }
+};
+
 module.exports = {
     getEliteDoctorForHomePage: getEliteDoctorForHomePage,
     getAllDoctorsForDoctorArticlePage: getAllDoctorsForDoctorArticlePage,
@@ -199,4 +212,5 @@ module.exports = {
     saveClinicalReportContentToDatabase: saveClinicalReportContentToDatabase,
     getDoctorAppointmentsTodayOverviewStatistics: getDoctorAppointmentsTodayOverviewStatistics,
     getDoctorStatisticMonthlyPatients: getDoctorStatisticMonthlyPatients,
+    cancelBookedAppointment: cancelBookedAppointment,
 };

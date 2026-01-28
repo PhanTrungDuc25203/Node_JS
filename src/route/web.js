@@ -131,6 +131,8 @@ let initWebRoutes = (app) => {
     router.get("/api/doctor/appointments/today/overview-statistics", doctorController.getDoctorAppointmentsTodayOverviewStatistics);
     //lấy thống kê người khám theo tháng cho trang dashboard bác sĩ
     router.get("/api/doctor/statistics/monthly/patients", doctorController.getDoctorStatisticMonthlyPatients);
+    //hủy gói khám đã đặt
+    router.post("/api/cancel-booked-appointment", authMiddleware, authorizeRoles("R2"), doctorController.cancelBookedAppointment);
 
     //lưu biểu mẫu kết quả khám của gói khám
     router.post("/api/exam-package/result-template", staffController.createResultTemplate);

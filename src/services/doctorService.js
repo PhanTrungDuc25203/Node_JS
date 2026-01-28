@@ -1163,6 +1163,90 @@ let getDoctorStatisticMonthlyPatientsService = (doctorId) => {
     });
 };
 
+let cancelBookedAppointmentService = (data) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const { appointmentId, patientId, language } = data;
+
+            if (!appointmentId || !patientId) {
+                return resolve({
+                    errCode: 1,
+                    errMessage: "Missing required parameters!",
+                });
+            }
+
+            let booking = await db.Booking.findOne({
+                where: {
+                    id: appointmentId,
+                    patientId: patientId,
+                },
+                include: [
+                    {
+                        model: db.User,
+                        as: "patientHasAppointmentWithDoctors",
+                        attributes: ["email", "firstName", "lastName"],
+                    },
+                    {
+                        model: db.User,
+                        as: "doctorHasAppointmentWithPatients",
+                        attributes: ["firstName", "lastName"],
+                    },
+                    {
+                        model: db.Allcode,
+                        as: "appointmentTimeTypeData",
+                        attributes: ["value_Vie", "value_Eng"],
+                    },
+                ],
+                raw: false,
+                nest: true,
+            });
+
+            if (!booking) {
+                return resolve({
+                    errCode: 2,
+                    errMessage: "Appointment not found!",
+                });
+            }
+
+            if (booking.statusId === "S4") {
+                return resolve({
+                    errCode: 3,
+                    errMessage: "Appointment already cancelled!",
+                });
+            }
+
+            // 2️⃣ Update trạng thái
+            booking.statusId = "S4";
+            await booking.save();
+
+            // 3️⃣ Chuẩn bị dữ liệu email
+            const patientInfo = booking.patientHasAppointmentWithDoctors;
+            const doctorInfo = booking.doctorHasAppointmentWithPatients;
+            const timeTypeInfo = booking.appointmentTimeTypeData;
+
+            let emailData = {
+                receiverEmail: patientInfo.email,
+                patientName: `${patientInfo.firstName} ${patientInfo.lastName}`,
+                doctorName: `${doctorInfo.firstName} ${doctorInfo.lastName}`,
+                time: language === "vi" ? timeTypeInfo.value_Vie : timeTypeInfo.value_En,
+                date: new Date(booking.date).toLocaleDateString(language === "vi" ? "vi-VN" : "en-US"),
+                language: language || "vi",
+            };
+
+            // 4️⃣ Gửi email
+            await sendAppointmentCancellationEmail(emailData);
+            console.log(`✅ Cancellation email sent to ${patientInfo.email}`);
+
+            return resolve({
+                errCode: 0,
+                errMessage: "Cancel appointment successfully!",
+            });
+        } catch (e) {
+            reject(e);
+        }
+    });
+};
+
 module.exports = {
     getEliteDoctorForHomePage: getEliteDoctorForHomePage,
     getAllDoctorsForDoctorArticlePage: getAllDoctorsForDoctorArticlePage,
@@ -1178,4 +1262,5 @@ module.exports = {
     saveClinicalReportContentToDatabaseService: saveClinicalReportContentToDatabaseService,
     getDoctorAppointmentsTodayOverviewStatisticsService: getDoctorAppointmentsTodayOverviewStatisticsService,
     getDoctorStatisticMonthlyPatientsService: getDoctorStatisticMonthlyPatientsService,
+    cancelBookedAppointmentService: cancelBookedAppointmentService,
 };
