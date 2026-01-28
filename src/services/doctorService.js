@@ -7,6 +7,7 @@ import _ from "lodash";
 import sendPaymentEmailService from "./sendPaymentEmailService";
 import sendMedicalReportService from "./sendMedicalReportService";
 import moment from "moment";
+import { sendAppointmentCancellationEmail } from "./appointmentCancellationEmailService";
 
 const MAX_NUMBER_CAN_RENDEZVOUS_DOCTOR = process.env.MAX_NUMBER_CAN_RENDEZVOUS_DOCTOR;
 
@@ -272,23 +273,110 @@ let getParticularInforForDoctorPage = (inputDoctorId) => {
 let bulkCreateTimeframesForDoctorService = (inputData) => {
     return new Promise(async (resolve, reject) => {
         try {
-            if (!inputData.scheduleArr || !inputData.doctorId || !inputData.formatedDate) {
+            if (!inputData.doctorId || !inputData.formatedDate) {
                 resolve({
                     errCode: 1,
-                    errMessage: "Missing required parameters: timeframe data!",
+                    errMessage: "Missing required parameters: doctor or date!",
                 });
-            } else {
-                let availableTimeframe = inputData.scheduleArr;
-                if (availableTimeframe && availableTimeframe.length > 0) {
-                    availableTimeframe.map((item) => {
-                        item.maxNumber = MAX_NUMBER_CAN_RENDEZVOUS_DOCTOR;
-                        return item;
-                    });
-                }
+                return;
+            }
 
-                //kiểm tra timeframe của một bác sĩ đã tồn tại
+            let { scheduleArr, doctorId, formatedDate, schedulesToDelete, schedulesWithPatients } = inputData;
+
+            // ========================================
+            // XỬ LÝ XÓA CÁC KHUNG GIỜ
+            // ========================================
+            if (schedulesToDelete && schedulesToDelete.length > 0) {
+                // Xóa các khung giờ trong database
+                await db.Schedule.destroy({
+                    where: {
+                        doctorId: doctorId,
+                        date: formatedDate,
+                        timeType: {
+                            [Op.in]: schedulesToDelete,
+                        },
+                    },
+                });
+
+                // ========================================
+                // GỬI EMAIL CHO BỆNH NHÂN
+                // ========================================
+                if (schedulesWithPatients && schedulesWithPatients.length > 0) {
+                    // Lấy thông tin bác sĩ
+                    let doctorInfo = await db.User.findOne({
+                        where: { id: doctorId },
+                        attributes: ["firstName", "lastName", "email"],
+                        raw: true,
+                    });
+
+                    // Gửi email cho từng bệnh nhân
+                    for (let booking of schedulesWithPatients) {
+                        try {
+                            // Lấy thông tin bệnh nhân
+                            let patientInfo = await db.User.findOne({
+                                where: { id: booking.patientId },
+                                attributes: ["email", "firstName", "lastName"],
+                                raw: true,
+                            });
+
+                            // Lấy thông tin khung giờ
+                            let timeTypeInfo = await db.Allcode.findOne({
+                                where: {
+                                    keyMap: booking.timeType,
+                                    type: "TIME",
+                                },
+                                attributes: ["value_Vie", "value_Eng"],
+                                raw: true,
+                            });
+
+                            if (patientInfo && patientInfo.email) {
+                                // Chuẩn bị dữ liệu email
+                                let emailData = {
+                                    receiverEmail: patientInfo.email,
+                                    patientName: `${patientInfo.firstName} ${patientInfo.lastName}`,
+                                    doctorName: `${doctorInfo.firstName} ${doctorInfo.lastName}`,
+                                    time: timeTypeInfo ? timeTypeInfo.value_Vie : booking.timeType,
+                                    date: new Date(formatedDate).toLocaleDateString("vi-VN"),
+                                    language: "vi", // Có thể lấy từ user preferences
+                                };
+
+                                // Gửi email hủy lịch
+                                await sendAppointmentCancellationEmail(emailData);
+                                console.log(`✅ Đã gửi email hủy lịch cho: ${patientInfo.email}`);
+                            }
+
+                            // Cập nhật trạng thái booking thành "đã hủy"
+                            await db.Booking.update(
+                                { statusId: "S4" }, // S4 = Cancelled
+                                {
+                                    where: {
+                                        id: booking.id,
+                                    },
+                                },
+                            );
+                        } catch (emailError) {
+                            console.error("❌ Error processing cancellation for booking:", booking.id, emailError);
+                            // Continue với các booking khác ngay cả khi gửi email thất bại
+                        }
+                    }
+                }
+            }
+
+            // ========================================
+            // XỬ LÝ THÊM KHUNG GIỜ MỚI
+            // ========================================
+            if (scheduleArr && scheduleArr.length > 0) {
+                let availableTimeframe = scheduleArr.map((item) => ({
+                    ...item,
+                    maxNumber: MAX_NUMBER_CAN_RENDEZVOUS_DOCTOR,
+                }));
+
+                // Kiểm tra timeframe đã tồn tại
                 let existing = await db.Schedule.findAll({
-                    where: { doctorId: inputData.doctorId, date: inputData.formatedDate },
+                    where: {
+                        doctorId: doctorId,
+                        date: formatedDate,
+                    },
                     attributes: ["timeType", "date", "doctorId", "maxNumber"],
                     raw: true,
                 });
@@ -300,24 +388,23 @@ let bulkCreateTimeframesForDoctorService = (inputData) => {
                     });
                 }
 
-                //compare to find differences
+                // Tìm những khung giờ cần thêm mới
                 let needAdding = _.differenceWith(availableTimeframe, existing, (a, b) => {
                     return a.timeType === b.timeType && a.date === b.date;
                 });
 
-                //create
+                // Tạo mới
                 if (needAdding && needAdding.length > 0) {
                     await db.Schedule.bulkCreate(needAdding);
                 }
-
-                // console.log('Timeframe for doctor: ', availableTimeframe);
-                // await db.Schedule.bulkCreate(availableTimeframe);
-                resolve({
-                    errCode: 0,
-                    errMessage: "Create available time for doctor appointment successfully!",
-                });
             }
+
+            resolve({
+                errCode: 0,
+                errMessage: "Cập nhật lịch khám thành công!",
+            });
         } catch (e) {
+            console.error("Error in bulkCreateTimeframesForDoctorService:", e);
             reject(e);
         }
     });
